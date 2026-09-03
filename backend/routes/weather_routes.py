@@ -397,3 +397,220 @@ def get_city_suggestions(
 
     return results[:8]
 
+
+SKYCAST_WEATHER_API_KEY = "d41847f42517475483e63944261706"
+
+AQI_DESCRIPTIONS = {
+    1: "Good (Safe Air)",
+    2: "Moderate",
+    3: "Unhealthy for Sensitive",
+    4: "Unhealthy",
+    5: "Very Unhealthy",
+    6: "Hazardous",
+}
+
+
+@router.get("/weather/synoptic")
+def get_synoptic_weather(
+    q: str = Query(..., min_length=1, description="City name or 'lat,lon' coordinates"),
+    days: int = Query(5, ge=1, le=7, description="Number of forecast days"),
+    db: Session = Depends(get_db),
+):
+    """
+    Live Synoptic Weather Intelligence & Forecasting (SkyCast Engine):
+    - Real-time station atmospheric observation (temp, feels like, condition, icon).
+    - 8 meteorological gauges (UV, Pressure, AQI, Visibility, Wind, Humidity, Sunrise, Sunset).
+    - 24-hour hourly forecast progression.
+    - 5-day daily forecast outlook.
+    - Active severe weather warnings & alerts.
+    - Auto-upserts station & observation into SQL Server warehouse.
+    """
+    query_clean = q.strip()
+    api_key = settings.weather_api_key or SKYCAST_WEATHER_API_KEY
+
+    try:
+        url = (
+            f"https://api.weatherapi.com/v1/forecast.json"
+            f"?key={api_key}&q={query_clean}&days={days}&aqi=yes&alerts=yes"
+        )
+        res = requests.get(url, timeout=5)
+
+        if res.ok:
+            data = res.json()
+            loc_data = data.get("location", {})
+            cur_data = data.get("current", {})
+            fc_data = data.get("forecast", {}).get("forecastday", [])
+            alerts_data = data.get("alerts", {}).get("alert", [])
+
+            # Extract location details
+            city_name = loc_data.get("name", query_clean)
+            region = loc_data.get("region", "")
+            country = loc_data.get("country", "")
+            lat = float(loc_data.get("lat", 0.0))
+            lon = float(loc_data.get("lon", 0.0))
+
+            # Current condition
+            cond_obj = cur_data.get("condition", {})
+            cond_text = cond_obj.get("text", "Clear")
+            cond_icon = cond_obj.get("icon", "")
+            if cond_icon and not cond_icon.startswith("http"):
+                cond_icon = f"https:{cond_icon}"
+
+            # Air Quality Index (US EPA)
+            aqi_val = cur_data.get("air_quality", {}).get("us-epa-index", 1)
+            aqi_desc = AQI_DESCRIPTIONS.get(aqi_val, "Moderate")
+
+            # Astro (Sunrise / Sunset)
+            astro = {}
+            if fc_data:
+                astro = fc_data[0].get("astro", {})
+
+            # Hourly Forecast (24 Hours)
+            hourly_list = []
+            if fc_data:
+                hours = fc_data[0].get("hour", [])
+                for h in hours:
+                    h_icon = h.get("condition", {}).get("icon", "")
+                    if h_icon and not h_icon.startswith("http"):
+                        h_icon = f"https:{h_icon}"
+                    hourly_list.append({
+                        "time": h.get("time", "").split(" ")[-1],
+                        "temp_c": round(float(h.get("temp_c", 0.0)), 1),
+                        "condition": h.get("condition", {}).get("text", "Clear"),
+                        "icon": h_icon,
+                        "chance_of_rain": h.get("chance_of_rain", 0),
+                    })
+
+            # Daily Forecast (Multi-Day Outlook)
+            import datetime
+            forecast_days_list = []
+            for fd in fc_data:
+                d_icon = fd.get("day", {}).get("condition", {}).get("icon", "")
+                if d_icon and not d_icon.startswith("http"):
+                    d_icon = f"https:{d_icon}"
+                try:
+                    dt_obj = datetime.date.fromisoformat(fd.get("date"))
+                    day_name = dt_obj.strftime("%a")
+                except Exception:
+                    day_name = fd.get("date", "")
+
+                forecast_days_list.append({
+                    "date": fd.get("date"),
+                    "day_name": day_name,
+                    "max_temp_c": round(float(fd.get("day", {}).get("maxtemp_c", 0.0)), 1),
+                    "min_temp_c": round(float(fd.get("day", {}).get("mintemp_c", 0.0)), 1),
+                    "avg_temp_c": round(float(fd.get("day", {}).get("avgtemp_c", 0.0)), 1),
+                    "condition": fd.get("day", {}).get("condition", {}).get("text", "Clear"),
+                    "icon": d_icon,
+                    "chance_of_rain": fd.get("day", {}).get("daily_chance_of_rain", 0),
+                })
+
+            # Active Alerts
+            alerts_list = []
+            for a in alerts_data:
+                alerts_list.append({
+                    "headline": a.get("headline", "Weather Advisory"),
+                    "severity": a.get("severity", "Moderate"),
+                    "desc": a.get("desc", ""),
+                })
+
+            # Auto-upsert into SQL Server data warehouse
+            try:
+                location = WeatherRepository.get_location_by_city(db, city_name)
+                if not location:
+                    location = WeatherRepository.add_location(
+                        db, city_name=city_name, country=country, latitude=lat, longitude=lon
+                    )
+                # Add observation to warehouse if location exists
+                WeatherRepository.create_weather_record(
+                    db,
+                    location_id=location.location_id,
+                    temperature_c=float(cur_data.get("temp_c", 0.0)),
+                    humidity_percent=int(cur_data.get("humidity", 0)),
+                    wind_speed_kmh=float(cur_data.get("wind_kph", 0.0)),
+                    weather_code=int(cond_obj.get("code", 1000)),
+                    weather_condition=cond_text,
+                    source="skycast_synoptic",
+                )
+            except Exception as dbe:
+                logger.debug(f"Warehouse sync skipped: {dbe}")
+
+            return {
+                "success": True,
+                "location": {
+                    "name": city_name,
+                    "region": region,
+                    "country": country,
+                    "lat": lat,
+                    "lon": lon,
+                },
+                "current": {
+                    "temp_c": round(float(cur_data.get("temp_c", 0.0)), 1),
+                    "feelslike_c": round(float(cur_data.get("feelslike_c", 0.0)), 1),
+                    "condition": cond_text,
+                    "icon": cond_icon,
+                    "humidity": int(cur_data.get("humidity", 0)),
+                    "wind_kph": round(float(cur_data.get("wind_kph", 0.0)), 1),
+                    "wind_dir": cur_data.get("wind_dir", "N"),
+                    "vis_km": round(float(cur_data.get("vis_km", 10.0)), 1),
+                    "uv": round(float(cur_data.get("uv", 0.0)), 1),
+                    "pressure_mb": round(float(cur_data.get("pressure_mb", 1013.0)), 1),
+                    "aqi": aqi_val,
+                    "aqi_desc": aqi_desc,
+                },
+                "astro": {
+                    "sunrise": astro.get("sunrise", "06:00 AM"),
+                    "sunset": astro.get("sunset", "06:00 PM"),
+                    "moon_phase": astro.get("moon_phase", "Waxing Crescent"),
+                },
+                "hourly": hourly_list,
+                "forecast": forecast_days_list,
+                "alerts": alerts_list,
+            }
+
+    except Exception as e:
+        logger.error(f"Error fetching synoptic weather for '{query_clean}': {e}")
+
+    # Fallback to warehouse records if WeatherAPI is unreachable
+    try:
+        loc = db.query(Location).filter(Location.city_name.ilike(f"%{query_clean}%")).first()
+        if loc:
+            latest = WeatherRepository.get_latest_by_location(db, loc.location_id)
+            if latest:
+                return {
+                    "success": True,
+                    "location": {
+                        "name": loc.city_name,
+                        "region": "",
+                        "country": loc.country,
+                        "lat": loc.latitude,
+                        "lon": loc.longitude,
+                    },
+                    "current": {
+                        "temp_c": latest.temperature_c,
+                        "feelslike_c": latest.temperature_c,
+                        "condition": latest.weather_condition,
+                        "icon": "https://cdn.weatherapi.com/weather/64x64/day/113.png",
+                        "humidity": latest.humidity_percent,
+                        "wind_kph": latest.wind_speed_kmh,
+                        "wind_dir": "NE",
+                        "vis_km": 10.0,
+                        "uv": 4.0,
+                        "pressure_mb": 1012.0,
+                        "aqi": 2,
+                        "aqi_desc": "Moderate",
+                    },
+                    "astro": {"sunrise": "06:00 AM", "sunset": "06:15 PM", "moon_phase": "Full Moon"},
+                    "hourly": [],
+                    "forecast": [],
+                    "alerts": [],
+                }
+    except Exception:
+        pass
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"Could not retrieve synoptic weather for '{query_clean}'.",
+    )
+
+

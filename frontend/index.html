@@ -47,6 +47,12 @@
           <span>Run ETL</span>
         </button>
 
+        <!-- SkyCast GPS Geolocation Button -->
+        <button id="btn-my-location" class="btn btn-secondary btn-location-glow" title="Detect local weather via GPS Geolocation">
+          <span class="btn-icon">📍</span>
+          <span>My Location</span>
+        </button>
+
         <!-- Refresh Button -->
         <button id="btn-refresh" class="btn-icon-square" title="Refresh platform data">
           <span>🔄</span>
@@ -158,8 +164,157 @@
             </div>
           </div>
 
+          <!-- SkyCast Favorites & History Bar -->
+          <div class="fav-history-bar" id="fav-history-bar">
+            <div class="fav-group">
+              <span class="fav-label">⭐ Favorites:</span>
+              <div id="favorites-list" class="fav-chips">
+                <span class="empty-hint">Click 'Add Favorite' on any station to pin</span>
+              </div>
+            </div>
+            <div class="history-group">
+              <span class="history-label">🕒 Recent:</span>
+              <div id="history-list" class="history-chips"></div>
+              <button id="btn-clear-history" class="btn-clear-text" type="button" title="Clear history">Clear</button>
+            </div>
+          </div>
+
           <!-- Dynamic Result Box -->
           <div id="search-result-container" class="search-result-container hidden"></div>
+        </div>
+
+        <!-- =============================================================== -->
+        <!-- SKYCAST SYNOPTIC METEOROLOGICAL INTELLIGENCE SUITE -->
+        <!-- =============================================================== -->
+        <div class="synoptic-suite-container" id="synoptic-suite-container">
+          <!-- Severe Weather Alerts Callout -->
+          <div id="syn-alerts-banner" class="syn-alerts-banner hidden">
+            <div class="syn-alert-icon">⚠️</div>
+            <div class="syn-alert-body">
+              <div class="syn-alert-headline" id="syn-alert-title">Severe Meteorological Advisory</div>
+              <div class="syn-alert-desc" id="syn-alert-desc">Active alert</div>
+            </div>
+          </div>
+
+          <!-- Hero Atmospheric Card -->
+          <div class="syn-hero-card">
+            <div class="syn-hero-left">
+              <div class="syn-station-meta">
+                <span class="syn-station-badge">LIVE SYNOPTIC STATION</span>
+                <span class="syn-live-dot"></span>
+              </div>
+              <h2 id="syn-city-name">Chennai, India</h2>
+              <h3 id="syn-condition-text">Loading synoptic observations...</h3>
+              <div class="syn-temp-row">
+                <div class="syn-temp-main" id="syn-temp-main">--°C</div>
+                <div class="syn-temp-meta">
+                  <p id="syn-feels-like">Feels Like --°C</p>
+                  <span class="syn-wind-tag" id="syn-wind-summary">Wind: -- km/h</span>
+                </div>
+              </div>
+              <div class="syn-actions">
+                <button id="btn-toggle-favorite" class="syn-btn-fav">
+                  <span id="fav-star-icon">⭐</span> <span id="fav-btn-text">Add to Favorites</span>
+                </button>
+              </div>
+            </div>
+            <div class="syn-hero-right">
+              <img id="syn-weather-icon" src="https://cdn.weatherapi.com/weather/64x64/day/113.png" alt="Weather" class="syn-hero-icon">
+              <div class="syn-obs-time" id="syn-obs-time">Synoptic Stream: Live</div>
+            </div>
+          </div>
+
+          <!-- 8-Gauge Precision Atmospheric Metrics Grid -->
+          <div class="syn-gauges-grid">
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">🌡️</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Temperature</span>
+                <span class="gauge-val" id="syn-temp">--°C</span>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">💧</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Relative Humidity</span>
+                <span class="gauge-val" id="syn-humidity">--%</span>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">💨</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Wind Velocity</span>
+                <span class="gauge-val" id="syn-wind">-- km/h</span>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">👁️</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Optical Visibility</span>
+                <span class="gauge-val" id="syn-visibility">-- km</span>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">☀️</div>
+              <div class="gauge-info">
+                <span class="gauge-label">UV Radiation</span>
+                <div class="gauge-val-group">
+                  <span class="gauge-val" id="syn-uv">--</span>
+                  <span class="syn-badge badge-uv" id="syn-uv-badge">Moderate</span>
+                </div>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">⏲️</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Barometric Pressure</span>
+                <span class="gauge-val" id="syn-pressure">-- mb</span>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">🫁</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Air Quality (EPA AQI)</span>
+                <div class="gauge-val-group">
+                  <span class="gauge-val" id="syn-aqi">--</span>
+                  <span class="syn-badge badge-aqi" id="syn-aqi-badge">Good</span>
+                </div>
+              </div>
+            </div>
+            <div class="syn-gauge-card">
+              <div class="gauge-icon">🌅</div>
+              <div class="gauge-info">
+                <span class="gauge-label">Astronomical Cycle</span>
+                <span class="gauge-val-small" id="syn-astro">↑ --:--  ↓ --:--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 24-Hour Synoptic Hourly Trajectory -->
+          <div class="syn-hourly-box">
+            <div class="syn-box-header">
+              <div class="syn-box-title">
+                <span>⏱️ 24-Hour Synoptic Hourly Trajectory</span>
+              </div>
+              <span class="syn-scroll-hint">Swipe or Scroll Horizontally &rarr;</span>
+            </div>
+            <div class="syn-hourly-carousel" id="syn-hourly-carousel">
+              <div class="hourly-loading">Loading hourly meteorological telemetry...</div>
+            </div>
+          </div>
+
+          <!-- 5-Day Synoptic Meteorological Outlook -->
+          <div class="syn-forecast-box">
+            <div class="syn-box-header">
+              <div class="syn-box-title">
+                <span>📅 Multi-Day Synoptic Outlook</span>
+              </div>
+              <span class="syn-forecast-meta">Aggregated WeatherAPI Forecast</span>
+            </div>
+            <div class="syn-forecast-grid" id="syn-forecast-grid">
+              <div class="forecast-loading">Loading multi-day outlook...</div>
+            </div>
+          </div>
         </div>
 
         <!-- KPI Metric Cards Grid -->

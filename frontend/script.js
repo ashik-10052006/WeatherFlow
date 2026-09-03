@@ -159,6 +159,11 @@ function setupActions() {
   // Dynamic City Search Setup
   setupCitySearch();
 
+  // SkyCast Synoptic Intelligence & Geolocation Setup
+  setupMyLocation();
+  setupFavoritesAndHistory();
+  fetchSynopticWeather("Chennai");
+
   // Chart Visualizer Mode Toggles
   const btnRanked = document.getElementById("btn-chart-mode-compare");
   const btnTrend = document.getElementById("btn-chart-mode-trend");
@@ -2567,6 +2572,9 @@ async function searchAndIngestCity(cityName) {
 
     showAlert(`✓ Live weather for ${data.city_name}: ${w.temperature_c}°C, ${w.weather_condition}`, "success");
 
+    // Also update synoptic atmospheric hero card & forecasts
+    fetchSynopticWeather(data.city_name);
+
     // Refresh entire platform data so KPIs, cards, and history update immediately
     await fetchAllData();
 
@@ -2584,4 +2592,327 @@ async function searchAndIngestCity(cityName) {
     btn.disabled = false;
     btn.innerHTML = '<span>Search & Ingest</span> &rarr;';
   }
+}
+
+// ============================================================================
+// SKYCAST SYNOPTIC METEOROLOGICAL INTELLIGENCE & GEOLOCATION
+// ============================================================================
+
+let currentSynopticCity = "Chennai";
+
+async function fetchSynopticWeather(query) {
+  if (!query) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/weather/synoptic?q=${encodeURIComponent(query)}&days=5`);
+    if (!res.ok) throw new Error(`Synoptic query failed (${res.status})`);
+    const data = await res.json();
+    if (!data.success) throw new Error("Could not parse synoptic weather payload");
+
+    renderSynopticUI(data);
+    currentSynopticCity = data.location.name;
+    saveSearchHistory(data.location.name);
+    updateFavoriteButtonState();
+    renderFavorites();
+  } catch (err) {
+    console.error("fetchSynopticWeather error:", err);
+  }
+}
+
+function renderSynopticUI(data) {
+  const loc = data.location;
+  const cur = data.current;
+  const astro = data.astro;
+
+  // 1. Hero Card
+  const cityNameEl = document.getElementById("syn-city-name");
+  const condTextEl = document.getElementById("syn-condition-text");
+  const tempMainEl = document.getElementById("syn-temp-main");
+  const feelsLikeEl = document.getElementById("syn-feels-like");
+  const windSummaryEl = document.getElementById("syn-wind-summary");
+  const iconEl = document.getElementById("syn-weather-icon");
+  const obsTimeEl = document.getElementById("syn-obs-time");
+
+  if (cityNameEl) cityNameEl.textContent = `${loc.name}${loc.country ? `, ${loc.country}` : ""}`;
+  if (condTextEl) condTextEl.textContent = cur.condition;
+  if (tempMainEl) tempMainEl.textContent = `${cur.temp_c}°C`;
+  if (feelsLikeEl) feelsLikeEl.textContent = `Feels Like ${cur.feelslike_c}°C`;
+  if (windSummaryEl) windSummaryEl.textContent = `Wind: ${cur.wind_kph} km/h ${cur.wind_dir}`;
+  if (iconEl && cur.icon) iconEl.src = cur.icon;
+  if (obsTimeEl) obsTimeEl.textContent = `Synoptic Stream • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+  // 2. 8 Gauges
+  const tempEl = document.getElementById("syn-temp");
+  const humEl = document.getElementById("syn-humidity");
+  const windEl = document.getElementById("syn-wind");
+  const visEl = document.getElementById("syn-visibility");
+  const uvEl = document.getElementById("syn-uv");
+  const uvBadgeEl = document.getElementById("syn-uv-badge");
+  const pressEl = document.getElementById("syn-pressure");
+  const aqiEl = document.getElementById("syn-aqi");
+  const aqiBadgeEl = document.getElementById("syn-aqi-badge");
+  const astroEl = document.getElementById("syn-astro");
+
+  if (tempEl) tempEl.textContent = `${cur.temp_c}°C`;
+  if (humEl) humEl.textContent = `${cur.humidity}%`;
+  if (windEl) windEl.textContent = `${cur.wind_kph} km/h`;
+  if (visEl) visEl.textContent = `${cur.vis_km} km`;
+
+  if (uvEl) uvEl.textContent = cur.uv;
+  if (uvBadgeEl) {
+    const uvVal = parseFloat(cur.uv) || 0;
+    uvBadgeEl.className = "syn-badge badge-uv";
+    if (uvVal < 3) {
+      uvBadgeEl.textContent = "Low";
+      uvBadgeEl.classList.add("low");
+    } else if (uvVal < 6) {
+      uvBadgeEl.textContent = "Moderate";
+      uvBadgeEl.classList.add("moderate");
+    } else {
+      uvBadgeEl.textContent = "High Risk";
+      uvBadgeEl.classList.add("high");
+    }
+  }
+
+  if (pressEl) pressEl.textContent = `${cur.pressure_mb} mb`;
+
+  if (aqiEl) aqiEl.textContent = cur.aqi;
+  if (aqiBadgeEl) {
+    aqiBadgeEl.textContent = cur.aqi_desc || "Moderate";
+    aqiBadgeEl.className = "syn-badge badge-aqi";
+    if (cur.aqi === 1) aqiBadgeEl.classList.add("good");
+    else if (cur.aqi === 2) aqiBadgeEl.classList.add("moderate");
+    else aqiBadgeEl.classList.add("unhealthy");
+  }
+
+  if (astroEl && astro) {
+    astroEl.textContent = `↑ ${astro.sunrise || "06:00 AM"}  ↓ ${astro.sunset || "06:15 PM"}`;
+  }
+
+  // 3. Hourly Forecast Carousel
+  const hourlyCarousel = document.getElementById("syn-hourly-carousel");
+  if (hourlyCarousel && data.hourly && data.hourly.length > 0) {
+    hourlyCarousel.innerHTML = data.hourly.map((h) => `
+      <div class="syn-hour-card">
+        <span class="syn-hour-time">${h.time}</span>
+        <img class="syn-hour-icon" src="${h.icon}" alt="${h.condition}">
+        <span class="syn-hour-temp">${h.temp_c}°C</span>
+        ${h.chance_of_rain > 0 ? `<span class="syn-hour-rain">💧 ${h.chance_of_rain}%</span>` : `<span style="font-size:0.68rem;color:#64748b;">${h.condition.slice(0, 10)}</span>`}
+      </div>
+    `).join("");
+  }
+
+  // 4. 5-Day Outlook Grid
+  const forecastGrid = document.getElementById("syn-forecast-grid");
+  if (forecastGrid && data.forecast && data.forecast.length > 0) {
+    forecastGrid.innerHTML = data.forecast.map((d) => `
+      <div class="syn-day-card">
+        <span class="syn-day-name">${d.day_name}</span>
+        <span class="syn-day-date">${d.date.slice(5)}</span>
+        <img class="syn-day-icon" src="${d.icon}" alt="${d.condition}">
+        <div class="syn-day-temps">
+          <span class="syn-day-max">${d.max_temp_c}°C</span>
+          <span class="syn-day-min">${d.min_temp_c}°C</span>
+        </div>
+        <span class="syn-day-cond">${d.condition}</span>
+      </div>
+    `).join("");
+  }
+
+  // 5. Weather Alerts Banner
+  const alertBanner = document.getElementById("syn-alerts-banner");
+  const alertTitle = document.getElementById("syn-alert-title");
+  const alertDesc = document.getElementById("syn-alert-desc");
+  if (alertBanner) {
+    if (data.alerts && data.alerts.length > 0) {
+      const a = data.alerts[0];
+      if (alertTitle) alertTitle.textContent = `⚠️ ${a.headline || "Severe Weather Advisory"}`;
+      if (alertDesc) alertDesc.textContent = a.desc || "Active weather alert in effect for this region.";
+      alertBanner.classList.remove("hidden");
+    } else {
+      alertBanner.classList.add("hidden");
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Geolocation (📍 My Location)
+// ----------------------------------------------------------------------------
+function setupMyLocation() {
+  const btn = document.getElementById("btn-my-location");
+  if (!btn) return;
+
+  btn.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      showAlert("Geolocation is not supported by your browser.", "error");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-icon">⏳</span><span>Acquiring...</span>';
+    showAlert("📍 Acquiring GPS coordinates via HTML5 Geolocation...", "info");
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude.toFixed(4);
+          const lon = pos.coords.longitude.toFixed(4);
+          showAlert(`📍 GPS coordinates locked: ${lat}, ${lon}. Ingesting local station...`, "info");
+
+          await fetchSynopticWeather(`${lat},${lon}`);
+          await fetchAllData();
+          showAlert(`✓ Station synchronized to your location: ${currentSynopticCity}!`, "success");
+        } catch (e) {
+          showAlert(`Geolocation error: ${e.message}`, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<span class="btn-icon">📍</span><span>My Location</span>';
+        }
+      },
+      (err) => {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">📍</span><span>My Location</span>';
+        showAlert("Location access denied or timed out.", "error");
+      },
+      { timeout: 8000, maximumAge: 60000 }
+    );
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Favorites & Search History
+// ----------------------------------------------------------------------------
+function getFavorites() {
+  try {
+    return JSON.parse(localStorage.getItem("skycast_favorites")) || ["Chennai", "Dubai", "Singapore", "London", "Tokyo"];
+  } catch (e) {
+    return ["Chennai", "Dubai", "Singapore"];
+  }
+}
+
+function saveFavoritesList(list) {
+  localStorage.setItem("skycast_favorites", JSON.stringify(list));
+  renderFavorites();
+  updateFavoriteButtonState();
+}
+
+function toggleCurrentFavorite() {
+  const list = getFavorites();
+  const idx = list.findIndex((c) => c.toLowerCase() === currentSynopticCity.toLowerCase());
+  if (idx >= 0) {
+    list.splice(idx, 1);
+    saveFavoritesList(list);
+    showAlert(`Removed ${currentSynopticCity} from favorites.`, "info");
+  } else {
+    list.push(currentSynopticCity);
+    saveFavoritesList(list);
+    showAlert(`⭐ Added ${currentSynopticCity} to favorites!`, "success");
+  }
+}
+
+function updateFavoriteButtonState() {
+  const btn = document.getElementById("btn-toggle-favorite");
+  const starIcon = document.getElementById("fav-star-icon");
+  const textEl = document.getElementById("fav-btn-text");
+  if (!btn) return;
+
+  const list = getFavorites();
+  const isFav = list.some((c) => c.toLowerCase() === currentSynopticCity.toLowerCase());
+
+  if (isFav) {
+    if (starIcon) starIcon.textContent = "★";
+    if (textEl) textEl.textContent = "Favorited Station";
+    btn.classList.add("favorited");
+    btn.style.background = "rgba(245, 158, 11, 0.25)";
+    btn.style.borderColor = "#f59e0b";
+    btn.style.color = "#fbbf24";
+  } else {
+    if (starIcon) starIcon.textContent = "⭐";
+    if (textEl) textEl.textContent = "Add to Favorites";
+    btn.classList.remove("favorited");
+    btn.style.background = "rgba(255, 255, 255, 0.08)";
+    btn.style.borderColor = "rgba(255, 255, 255, 0.18)";
+    btn.style.color = "#ffffff";
+  }
+}
+
+function renderFavorites() {
+  const container = document.getElementById("favorites-list");
+  if (!container) return;
+
+  const favs = getFavorites();
+  if (favs.length === 0) {
+    container.innerHTML = '<span class="empty-hint" style="font-size: 0.75rem; color: #64748b;">No favorites pinned yet.</span>';
+    return;
+  }
+
+  container.innerHTML = favs.map((city) => `
+    <button class="fav-chip ${city.toLowerCase() === currentSynopticCity.toLowerCase() ? 'active' : ''}" data-city="${city}">
+      <span>⭐</span> ${city}
+    </button>
+  `).join("");
+
+  container.querySelectorAll(".fav-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const city = chip.getAttribute("data-city");
+      fetchSynopticWeather(city);
+    });
+  });
+}
+
+function getSearchHistory() {
+  try {
+    return JSON.parse(localStorage.getItem("skycast_history")) || ["Chennai", "Bangalore", "Dubai"];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveSearchHistory(city) {
+  if (!city) return;
+  let history = getSearchHistory().filter((c) => c.toLowerCase() !== city.toLowerCase());
+  history.unshift(city);
+  if (history.length > 7) history.pop();
+  localStorage.setItem("skycast_history", JSON.stringify(history));
+  renderSearchHistory();
+}
+
+function clearSearchHistory() {
+  localStorage.removeItem("skycast_history");
+  renderSearchHistory();
+  showAlert("Search history cleared.", "info");
+}
+
+function renderSearchHistory() {
+  const container = document.getElementById("history-list");
+  if (!container) return;
+
+  const history = getSearchHistory();
+  if (history.length === 0) {
+    container.innerHTML = '<span style="font-size: 0.72rem; color: #64748b;">No recent searches</span>';
+    return;
+  }
+
+  container.innerHTML = history.map((city) => `
+    <button class="history-chip" data-city="${city}">
+      ${city}
+    </button>
+  `).join("");
+
+  container.querySelectorAll(".history-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const city = chip.getAttribute("data-city");
+      fetchSynopticWeather(city);
+    });
+  });
+}
+
+function setupFavoritesAndHistory() {
+  renderFavorites();
+  renderSearchHistory();
+
+  const favBtn = document.getElementById("btn-toggle-favorite");
+  if (favBtn) favBtn.addEventListener("click", toggleCurrentFavorite);
+
+  const clearBtn = document.getElementById("btn-clear-history");
+  if (clearBtn) clearBtn.addEventListener("click", clearSearchHistory);
 }
