@@ -50,6 +50,32 @@
       <!-- SECTION 1: DASHBOARD OVERVIEW -->
       <!-- =============================================================== -->
       <section id="section-dashboard" class="content-section active">
+        <!-- Dynamic Global City Search Panel -->
+        <div class="city-search-panel">
+          <div class="search-header">
+            <div class="search-title">🌍 Dynamic City Weather Search & Ingestion</div>
+            <div class="search-subtitle">Type any city worldwide to query live weather and persist observations into SQL Server automatically.</div>
+          </div>
+          <div class="input-group">
+            <input type="text" id="input-city-search" class="form-control search-input" placeholder="Search any city e.g. Dubai, Singapore, Toronto, Berlin, Cairo, Sydney...">
+            <button id="btn-search-city" class="btn btn-primary">
+              <span class="btn-icon">🔍</span> Search & Ingest
+            </button>
+          </div>
+          <div class="prompt-chips">
+            <span>Popular Cities:</span>
+            <button class="city-chip-btn" data-city="Dubai">Dubai</button>
+            <button class="city-chip-btn" data-city="Singapore">Singapore</button>
+            <button class="city-chip-btn" data-city="Toronto">Toronto</button>
+            <button class="city-chip-btn" data-city="Berlin">Berlin</button>
+            <button class="city-chip-btn" data-city="Cairo">Cairo</button>
+            <button class="city-chip-btn" data-city="Seoul">Seoul</button>
+          </div>
+
+          <!-- Dynamic Result Box -->
+          <div id="search-result-container" class="search-result-container hidden"></div>
+        </div>
+
         <!-- KPI Metric Cards Grid -->
         <div class="kpi-grid">
           <div class="kpi-card">
@@ -90,9 +116,12 @@
         </div>
 
         <!-- Latest Weather Cards Carousel / Grid -->
-        <div class="panel-header">
-          <h2>Current Weather by Location</h2>
-          <span class="badge" id="badge-latest-count">0 Locations</span>
+        <div class="panel-header flex-between">
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h2>Current Weather by Location</h2>
+            <span class="badge" id="badge-latest-count">0 Locations</span>
+          </div>
+          <input type="text" id="input-cards-filter" class="form-control" style="max-width: 220px;" placeholder="🔎 Filter cards...">
         </div>
         <div class="cards-grid" id="latest-weather-cards">
           <!-- Populated by JavaScript -->

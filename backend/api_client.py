@@ -231,6 +231,67 @@ class WeatherApiClient:
                 "error": f"Invalid JSON response: {str(e)}",
             }
 
+    def fetch_by_query(self, query: str, location_id: Optional[int] = None) -> Dict[str, Any]:
+        """Dynamically search and fetch weather for any city query worldwide."""
+        query_clean = query.strip()
+        if not query_clean:
+            return {"success": False, "error": "City search query cannot be empty"}
+
+        # 1. Try WeatherAPI.com if configured
+        if self.api_key:
+            try:
+                url = "http://api.weatherapi.com/v1/current.json"
+                params = {"key": self.api_key, "q": query_clean}
+                resp = self.session.get(url, params=params, timeout=self.timeout)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    loc = data.get("location", {})
+                    curr = data.get("current", {})
+                    cond = curr.get("condition", {})
+                    return {
+                        "success": True,
+                        "location_id": location_id,
+                        "city_name": loc.get("name", query_clean),
+                        "country": loc.get("country", ""),
+                        "latitude": float(loc.get("lat", 0.0)),
+                        "longitude": float(loc.get("lon", 0.0)),
+                        "recorded_at": curr.get("last_updated"),
+                        "temperature_c": curr.get("temp_c"),
+                        "humidity_percent": curr.get("humidity"),
+                        "wind_speed_kmh": curr.get("wind_kph"),
+                        "weather_code": cond.get("code"),
+                        "weather_condition": cond.get("text"),
+                        "source": "weatherapi_com",
+                        "raw_response": data,
+                        "error": None,
+                    }
+            except Exception as e:
+                logger.warning(f"WeatherAPI search for '{query_clean}' failed: {e}")
+
+        # 2. Fallback to Open-Meteo Geocoding
+        try:
+            geo_url = "https://geocoding-api.open-meteo.com/v1/search"
+            geo_params = {"name": query_clean, "count": 1, "language": "en", "format": "json"}
+            geo_res = self.session.get(geo_url, params=geo_params, timeout=self.timeout)
+            if geo_res.status_code == 200:
+                geo_data = geo_res.json()
+                results = geo_data.get("results")
+                if results and len(results) > 0:
+                    first = results[0]
+                    lat = float(first["latitude"])
+                    lon = float(first["longitude"])
+                    city_name = first.get("name", query_clean)
+                    country = first.get("country", "")
+                    return self.fetch_weather(lat, lon, location_id, city_name, country)
+        except Exception as e:
+            logger.warning(f"Open-Meteo geocoding for '{query_clean}' failed: {e}")
+
+        return {
+            "success": False,
+            "city_name": query_clean,
+            "error": f"City '{query_clean}' was not found across weather providers.",
+        }
+
     def fetch_multiple_locations(
         self, locations: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:

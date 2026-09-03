@@ -250,6 +250,161 @@ body {
 }
 
 /* ==========================================================================
+   Dynamic City Search Panel
+   ========================================================================== */
+.city-search-panel {
+  background: linear-gradient(135deg, rgba(19, 27, 46, 0.9), rgba(24, 34, 56, 0.95));
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.city-search-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-purple));
+}
+
+.search-header {
+  margin-bottom: 1rem;
+}
+
+.search-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.search-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+}
+
+.search-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+}
+
+.city-chip-btn {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--accent-cyan);
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.city-chip-btn:hover {
+  background-color: var(--accent-cyan);
+  color: #0b0f19;
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+/* Dynamic Live Weather Result Highlight Card */
+.search-result-container {
+  margin-top: 1.25rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.dynamic-result-card {
+  background: linear-gradient(135deg, #162035, #1d2b48);
+  border: 1px solid var(--accent-cyan);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.15);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.dynamic-result-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.dynamic-weather-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.dynamic-temp-big {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.dynamic-cond-badge {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  background-color: rgba(6, 182, 212, 0.15);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  display: inline-block;
+  margin-top: 0.25rem;
+}
+
+.dynamic-meta-grid {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.dynamic-meta-item strong {
+  color: var(--text-primary);
+  display: block;
+  font-size: 1rem;
+}
+
+/* Dynamic Weather Card Conditions */
+.weather-city-card.condition-sunny {
+  border-left: 4px solid #f59e0b;
+}
+
+.weather-city-card.condition-rain {
+  border-left: 4px solid #06b6d4;
+}
+
+.weather-city-card.condition-cloudy {
+  border-left: 4px solid #94a3b8;
+}
+
+.weather-city-card.condition-thunder {
+  border-left: 4px solid #a855f7;
+}
+
+.weather-city-card.condition-snow {
+  border-left: 4px solid #38bdf8;
+}
+
+/* ==========================================================================
    KPI Cards Grid
    ========================================================================== */
 .kpi-grid {

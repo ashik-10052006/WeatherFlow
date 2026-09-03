@@ -73,6 +73,9 @@ function setupActions() {
 
   // GenAI Assistant Setup
   setupGenAI();
+
+  // Dynamic City Search Setup
+  setupCitySearch();
 }
 
 // ============================================================================
@@ -149,6 +152,23 @@ async function fetchLocations() {
   }
 }
 
+function getWeatherVisuals(conditionText) {
+  const cond = (conditionText || "").toLowerCase();
+  if (cond.includes("sun") || cond.includes("clear")) {
+    return { icon: "☀️", cssClass: "condition-sunny" };
+  }
+  if (cond.includes("rain") || cond.includes("drizzle") || cond.includes("shower")) {
+    return { icon: "🌧️", cssClass: "condition-rain" };
+  }
+  if (cond.includes("thunder")) {
+    return { icon: "⛈️", cssClass: "condition-thunder" };
+  }
+  if (cond.includes("snow") || cond.includes("ice") || cond.includes("blizzard")) {
+    return { icon: "❄️", cssClass: "condition-snow" };
+  }
+  return { icon: "☁️", cssClass: "condition-cloudy" };
+}
+
 async function fetchLatestWeather() {
   try {
     const res = await fetch(`${API_BASE}/api/weather/latest`);
@@ -170,10 +190,11 @@ async function fetchLatestWeather() {
         const hum = item.humidity_percent !== null ? `${item.humidity_percent}%` : "--";
         const wind = item.wind_speed_kmh !== null ? `${item.wind_speed_kmh} km/h` : "--";
         const cond = item.weather_condition || "Unknown";
+        const visuals = getWeatherVisuals(cond);
         const time = item.recorded_at ? new Date(item.recorded_at).toUTCString() : "Pending sync";
 
         return `
-          <div class="weather-city-card">
+          <div class="weather-city-card ${visuals.cssClass}" data-city="${item.city_name.toLowerCase()}">
             <div class="card-top">
               <div>
                 <div class="city-title">${item.city_name}</div>
@@ -181,7 +202,7 @@ async function fetchLatestWeather() {
               </div>
               <div class="temp-large">${temp}</div>
             </div>
-            <div class="weather-condition-tag">⛅ ${cond}</div>
+            <div class="weather-condition-tag">${visuals.icon} ${cond}</div>
             <div class="weather-details-grid">
               <div class="weather-detail-item">Humidity: <span>${hum}</span></div>
               <div class="weather-detail-item">Wind: <span>${wind}</span></div>
@@ -649,5 +670,105 @@ async function askGenAIQuestion(question) {
   } finally {
     btn.disabled = false;
     btn.innerHTML = "Ask Assistant";
+  }
+}
+
+// ============================================================================
+// Dynamic Global City Search & Ingestion
+// ============================================================================
+function setupCitySearch() {
+  const searchInput = document.getElementById("input-city-search");
+  const searchBtn = document.getElementById("btn-search-city");
+  if (!searchInput || !searchBtn) return;
+
+  searchBtn.addEventListener("click", () => {
+    const q = searchInput.value.trim();
+    if (q) searchAndIngestCity(q);
+  });
+
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const q = searchInput.value.trim();
+      if (q) searchAndIngestCity(q);
+    }
+  });
+
+  // Quick Ingest City Chips
+  document.querySelectorAll(".city-chip-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const city = btn.getAttribute("data-city");
+      searchInput.value = city;
+      searchAndIngestCity(city);
+    });
+  });
+
+  // Client-side instant filter on cards grid
+  const cardsFilter = document.getElementById("input-cards-filter");
+  if (cardsFilter) {
+    cardsFilter.addEventListener("input", (e) => {
+      const val = e.target.value.toLowerCase().trim();
+      const cards = document.querySelectorAll("#latest-weather-cards .weather-city-card");
+      cards.forEach((card) => {
+        const city = card.getAttribute("data-city") || "";
+        card.style.display = city.includes(val) ? "" : "none";
+      });
+    });
+  }
+}
+
+async function searchAndIngestCity(cityName) {
+  const btn = document.getElementById("btn-search-city");
+  const container = document.getElementById("search-result-container");
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-icon">⏳</span> Ingesting...';
+  showAlert(`Searching live weather for ${cityName}...`, "info");
+
+  try {
+    const res = await fetch(`${API_BASE}/api/weather/search?city=${encodeURIComponent(cityName)}&refresh=true`);
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.detail || data.error || "City search failed");
+    }
+
+    const w = data.weather || {};
+    const visuals = getWeatherVisuals(w.weather_condition);
+    const tempF = w.temperature_c !== null ? ((w.temperature_c * 9/5) + 32).toFixed(1) : "--";
+
+    container.innerHTML = `
+      <div class="dynamic-result-card">
+        <div class="dynamic-result-left">
+          <div class="dynamic-weather-icon">${visuals.icon}</div>
+          <div>
+            <div style="font-size: 1.4rem; font-weight: 700; color: #ffffff;">${data.city_name}, ${data.country || ""}</div>
+            <div class="dynamic-cond-badge">${w.weather_condition || "Live"}</div>
+            <div style="font-size: 0.75rem; color: #34d399; margin-top: 0.25rem;">
+              ${data.is_new ? "✓ Newly Added & Ingested into SQL Server" : "✓ Ingested / Updated in Warehouse"} (${w.source || "weather_api"})
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="dynamic-temp-big">${w.temperature_c !== null ? `${w.temperature_c}°C` : "--"}</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">${tempF}°F</div>
+        </div>
+        <div class="dynamic-meta-grid">
+          <div class="dynamic-meta-item"><span>Humidity</span><strong>${w.humidity_percent !== null ? `${w.humidity_percent}%` : "--"}</strong></div>
+          <div class="dynamic-meta-item"><span>Wind</span><strong>${w.wind_speed_kmh !== null ? `${w.wind_speed_kmh} km/h` : "--"}</strong></div>
+          <div class="dynamic-meta-item"><span>Observed</span><strong>${w.recorded_at ? w.recorded_at.replace("T", " ") : "--"}</strong></div>
+        </div>
+      </div>
+    `;
+    container.classList.remove("hidden");
+
+    showAlert(`✓ Live weather for ${data.city_name}: ${w.temperature_c}°C, ${w.weather_condition}`, "success");
+
+    // Refresh entire platform data so KPIs, cards, and history update immediately
+    await fetchAllData();
+  } catch (err) {
+    console.error("City search error:", err);
+    showAlert(`City Search: ${err.message}`, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span class="btn-icon">🔍</span> Search & Ingest';
   }
 }
