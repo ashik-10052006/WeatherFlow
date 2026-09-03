@@ -643,7 +643,6 @@ async function askGenAIQuestion(question) {
       /\*\*(.*?)\*\*/g,
       "<strong>$1</strong>"
     );
-    document.getElementById("genai-sql").textContent = data.sql;
     document.getElementById("genai-row-count").textContent = data.row_count;
 
     // Build results table
