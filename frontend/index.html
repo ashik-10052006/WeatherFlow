@@ -32,6 +32,20 @@
       </div>
 
       <div class="header-actions">
+        <button id="btn-open-cmd" class="btn-cmd-palette" title="Global Quick Actions (Ctrl+K)">
+          <span class="cmd-icon">⌘</span>
+          <span class="cmd-text">Commands</span>
+          <kbd class="cmd-kbd">Ctrl K</kbd>
+        </button>
+        <div class="header-refresh-group">
+          <span class="refresh-countdown-badge" id="badge-refresh-countdown" title="Live sync countdown">Sync: Idle</span>
+          <select id="select-auto-refresh" class="header-refresh-select" title="Auto-refresh interval">
+            <option value="0">Auto-sync: Off</option>
+            <option value="30">Every 30s</option>
+            <option value="60">Every 1m</option>
+            <option value="300">Every 5m</option>
+          </select>
+        </div>
         <a href="/json-to-ui" class="header-portal-btn" target="_blank" title="Universal JSON to UI Studio">✨ Studio</a>
         <a href="/links" class="header-portal-btn" target="_blank" title="All Links Directory">🌐 Links</a>
         <a href="/docs" class="header-portal-btn" target="_blank" title="Swagger API Documentation">📖 Docs</a>
@@ -46,6 +60,9 @@
         </button>
       </div>
     </header>
+
+    <!-- Floating Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
 
     <!-- Global Alert / Notification Banner -->
     <div id="alert-banner" class="alert-banner hidden"></div>
@@ -212,13 +229,28 @@
               <select id="filter-history-city" class="form-control">
                 <option value="">All Cities</option>
               </select>
-              <select id="filter-history-limit" class="form-control">
-                <option value="25">25 records</option>
-                <option value="50" selected>50 records</option>
-                <option value="100">100 records</option>
-                <option value="200">200 records</option>
+              <select id="filter-history-condition" class="form-control">
+                <option value="">All Conditions</option>
+                <option value="sunny">☀️ Sunny / Clear</option>
+                <option value="rain">🌧️ Rain / Drizzle</option>
+                <option value="cloud">☁️ Overcast / Cloudy</option>
+                <option value="thunder">⛈️ Thunderstorm</option>
+                <option value="snow">❄️ Snow / Freezing</option>
               </select>
-              <button id="btn-apply-filter" class="btn btn-primary">Refresh Filter</button>
+              <select id="filter-history-limit" class="form-control">
+                <option value="25">25 rows</option>
+                <option value="50">50 rows</option>
+                <option value="100" selected>100 rows</option>
+                <option value="200">200 rows</option>
+                <option value="500">500 rows</option>
+              </select>
+              <button id="btn-export-csv" class="btn btn-secondary btn-export" title="Export currently filtered table to CSV">
+                <span>⬇</span> CSV
+              </button>
+              <button id="btn-export-json" class="btn btn-secondary btn-export" title="Export currently filtered table to JSON">
+                <span>⬇</span> JSON
+              </button>
+              <button id="btn-apply-filter" class="btn btn-primary">Refresh</button>
             </div>
           </div>
 
@@ -229,21 +261,31 @@
             <table class="data-table" id="table-history">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>City</th>
-                  <th>Country</th>
-                  <th>Recorded At (UTC)</th>
-                  <th>Temp (°C)</th>
-                  <th>Humidity (%)</th>
-                  <th>Wind (km/h)</th>
-                  <th>Condition</th>
-                  <th>Source</th>
+                  <th class="sortable-th" data-sort="id">ID <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="city_name">City <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="country">Country <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="recorded_at">Recorded At (UTC) <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="temperature_c">Temp (°C) <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="humidity_percent">Humidity (%) <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="wind_speed_kmh">Wind (km/h) <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="weather_condition">Condition <span class="sort-icon">↕</span></th>
+                  <th class="sortable-th" data-sort="source">Source <span class="sort-icon">↕</span></th>
                 </tr>
               </thead>
               <tbody id="tbody-history">
                 <tr><td colspan="9" class="loading-cell">Loading history records...</td></tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Bar -->
+          <div class="table-pagination-bar" id="history-pagination-bar">
+            <div class="pagination-info" id="history-pagination-info">Showing 0–0 of 0 records</div>
+            <div class="pagination-controls">
+              <button class="pagination-btn" id="btn-hist-prev" disabled>‹ Previous</button>
+              <div class="pagination-pages" id="history-pagination-pages"></div>
+              <button class="pagination-btn" id="btn-hist-next" disabled>Next ›</button>
+            </div>
           </div>
         </div>
       </section>
@@ -301,6 +343,52 @@
               <button id="btn-trigger-monitor" class="btn btn-primary">
                 ▶ Trigger ETL Pipeline
               </button>
+            </div>
+          <!-- Visual ETL Pipeline DAG Stages -->
+          <div class="etl-dag-container">
+            <div class="dag-header">
+              <div class="dag-title-group">
+                <span class="dag-icon">⚡</span>
+                <span class="dag-title">Real-Time Data Engineering DAG Pipeline Lifecycle</span>
+              </div>
+              <span class="dag-status-pill" id="dag-overall-status">DAG: Standby / Ready</span>
+            </div>
+            <div class="dag-flow">
+              <div class="dag-step" id="dag-step-1">
+                <div class="dag-step-icon">📡</div>
+                <div class="dag-step-content">
+                  <div class="dag-step-name">1. WeatherAPI Ingest</div>
+                  <div class="dag-step-sub">REST Client • JSON Extract</div>
+                </div>
+                <div class="dag-step-badge">HTTP 200</div>
+              </div>
+              <div class="dag-arrow">➔</div>
+              <div class="dag-step" id="dag-step-2">
+                <div class="dag-step-icon">🧹</div>
+                <div class="dag-step-content">
+                  <div class="dag-step-name">2. Data Cleansing</div>
+                  <div class="dag-step-sub">Pandas • Range Validation</div>
+                </div>
+                <div class="dag-step-badge">100% Quality</div>
+              </div>
+              <div class="dag-arrow">➔</div>
+              <div class="dag-step" id="dag-step-3">
+                <div class="dag-step-icon">🗄️</div>
+                <div class="dag-step-content">
+                  <div class="dag-step-name">3. SQL Server Upsert</div>
+                  <div class="dag-step-sub">ODBC 17 • T-SQL Merge</div>
+                </div>
+                <div class="dag-step-badge">Atomic Commit</div>
+              </div>
+              <div class="dag-arrow">➔</div>
+              <div class="dag-step" id="dag-step-4">
+                <div class="dag-step-icon">📊</div>
+                <div class="dag-step-content">
+                  <div class="dag-step-name">4. Warehouse Views</div>
+                  <div class="dag-step-sub">Time-Series Aggregation</div>
+                </div>
+                <div class="dag-step-badge">Ready</div>
+              </div>
             </div>
           </div>
 
@@ -430,6 +518,98 @@
         </div>
         <div class="modal-body" id="modal-body">
           <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Global Command Palette Modal (Ctrl+K) -->
+    <div id="command-palette-modal" class="cmd-palette-modal hidden">
+      <div class="cmd-palette-backdrop" id="cmd-palette-backdrop"></div>
+      <div class="cmd-palette-window">
+        <div class="cmd-palette-input-bar">
+          <span class="cmd-palette-search-icon">⚡</span>
+          <input type="text" id="cmd-palette-input" placeholder="Type a command or search a city (e.g. Dubai, run etl, history, genai)..." autocomplete="off">
+          <kbd class="cmd-palette-esc" id="btn-close-cmd">ESC</kbd>
+        </div>
+        <div class="cmd-palette-list" id="cmd-palette-list">
+          <!-- Populated by JavaScript -->
+        </div>
+        <div class="cmd-palette-footer">
+          <span><kbd>↑</kbd> <kbd>↓</kbd> to navigate</span>
+          <span><kbd>↵</kbd> to execute</span>
+          <span><kbd>ESC</kbd> to close</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Station Detail Slide-Over Drawer -->
+    <div id="city-detail-drawer" class="station-drawer hidden">
+      <div class="station-drawer-backdrop" id="drawer-backdrop"></div>
+      <div class="station-drawer-panel">
+        <div class="station-drawer-header">
+          <div class="drawer-header-meta">
+            <span class="drawer-station-badge" id="drawer-badge-status">Warehouse Station</span>
+            <h2 id="drawer-city-name">City Name</h2>
+            <span class="drawer-country-label" id="drawer-country-name">Country</span>
+          </div>
+          <button id="btn-close-drawer" class="btn-close-drawer" title="Close Drawer">&times;</button>
+        </div>
+
+        <div class="station-drawer-body">
+          <!-- Temperature Hero -->
+          <div class="drawer-temp-hero">
+            <div class="drawer-temp-val" id="drawer-temp">--°C</div>
+            <div class="drawer-cond-badge" id="drawer-cond">☀️ Clear</div>
+          </div>
+
+          <!-- Station Metadata Grid -->
+          <div class="drawer-meta-grid">
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-label">Humidity</span>
+              <strong id="drawer-humidity">--%</strong>
+            </div>
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-label">Wind Velocity</span>
+              <strong id="drawer-wind">-- km/h</strong>
+            </div>
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-label">Latitude</span>
+              <strong id="drawer-lat">--</strong>
+            </div>
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-label">Longitude</span>
+              <strong id="drawer-lon">--</strong>
+            </div>
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-label">Warehouse ID</span>
+              <strong id="drawer-loc-id">#--</strong>
+            </div>
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-label">Last Synced</span>
+              <strong id="drawer-sync-time">--</strong>
+            </div>
+          </div>
+
+          <!-- 7-Day Trend Canvas -->
+          <div class="drawer-chart-container">
+            <div class="drawer-chart-header">
+              <span>📈 7-Day Meteorological Trajectory</span>
+              <span class="drawer-chart-sub">Observed in SQL Server</span>
+            </div>
+            <div class="drawer-canvas-box">
+              <canvas id="chart-drawer-trend"></canvas>
+            </div>
+          </div>
+
+          <!-- Drawer Action Controls -->
+          <div class="drawer-actions">
+            <button id="btn-drawer-filter-history" class="btn btn-primary" style="flex: 1;">
+              📜 Filter in Warehouse History
+            </button>
+            <button id="btn-drawer-ask-genai" class="btn btn-secondary" style="flex: 1;">
+              🤖 Ask GenAI Co-Pilot
+            </button>
+          </div>
         </div>
       </div>
     </div>

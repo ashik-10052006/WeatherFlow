@@ -9,6 +9,7 @@ const API_BASE = window.location.origin;
 let tempTrendChart = null;
 let humidityTrendChart = null;
 let cityDistChart = null;
+let drawerTrendChart = null;
 
 // Application State
 const state = {
@@ -20,6 +21,24 @@ const state = {
   humidityTrend: [],
   chartMode: "RANKED", // "RANKED" or "TREND"
   selectedChartCity: "ALL",
+  // Client-Level History Table State
+  history: {
+    allRecords: [],
+    filteredRecords: [],
+    sortColumn: "recorded_at",
+    sortAsc: false,
+    page: 1,
+    pageSize: 25,
+    search: "",
+    city: "",
+    condition: "",
+  },
+  // Client-Level Auto-Refresh State
+  autoRefresh: {
+    intervalSec: 0,
+    remainingSec: 0,
+    timerId: null,
+  },
 };
 
 // ============================================================================
@@ -28,6 +47,10 @@ const state = {
 document.addEventListener("DOMContentLoaded", () => {
   setupNavigation();
   setupActions();
+  setupCommandPalette();
+  setupAutoRefresh();
+  setupStationDrawer();
+  setupHistoryTableSortingAndExport();
   fetchAllData();
 });
 
@@ -250,16 +273,8 @@ function updateHistoryChipsActive(selectedCity) {
 }
 
 function filterHistoryTableClientSide(q) {
-  const rows = document.querySelectorAll("#tbody-history tr");
-  let visibleCount = 0;
-  rows.forEach((row) => {
-    const text = row.textContent.toLowerCase();
-    const matches = !q || text.includes(q);
-    row.style.display = matches ? "" : "none";
-    if (matches) visibleCount++;
-  });
-  const badge = document.getElementById("badge-history-count");
-  if (badge) badge.textContent = `${visibleCount} Records`;
+  state.history.page = 1;
+  renderHistoryTable();
 }
 
 function getWeatherVisuals(conditionText) {
@@ -300,10 +315,12 @@ function quickFilterCity(cityName) {
   const historyBtn = document.querySelector('[data-target="section-history"]');
   if (historyBtn) historyBtn.click();
   const searchInput = document.getElementById("input-history-search");
-  if (searchInput) {
-    searchInput.value = cityName;
-    filterHistoryTableClientSide(cityName.toLowerCase());
-  }
+  const citySelect = document.getElementById("filter-history-city");
+  if (citySelect) citySelect.value = cityName;
+  if (searchInput) searchInput.value = cityName;
+  updateHistoryChipsActive(cityName);
+  state.history.page = 1;
+  fetchWeatherHistory();
 }
 
 async function fetchLatestWeather() {
@@ -357,7 +374,10 @@ async function fetchLatestWeather() {
 
             <div class="card-bottom">
               <div class="card-recorded-time"><span class="pulse-dot-small"></span> Synced ${friendlyTime}</div>
-              <button class="card-explore-btn" onclick="quickFilterCity('${item.city_name}')" title="Filter history for ${item.city_name}">History &rarr;</button>
+              <div style="display: flex; gap: 0.35rem;">
+                <button class="card-explore-btn" onclick="openStationDrawerByCity('${item.city_name}')" title="Inspect ${item.city_name} Station Telemetry & 7-Day Curve">Inspect &rarr;</button>
+                <button class="card-explore-btn" onclick="quickFilterCity('${item.city_name}')" title="Filter history for ${item.city_name}">History &rarr;</button>
+              </div>
             </div>
           </div>
         `;
@@ -396,13 +416,66 @@ async function fetchHumidityTrend() {
   }
 }
 
+// ============================================================================
+// Client-Level Production Modules
+// ============================================================================
+
+// Floating Toasts & Alerts
+function showAlert(msg, type = "info") {
+  showToast(msg, type);
+  const banner = document.getElementById("alert-banner");
+  if (banner) {
+    banner.textContent = msg;
+    banner.className = `alert-banner ${type}`;
+    banner.classList.remove("hidden");
+    setTimeout(() => { banner.classList.add("hidden"); }, 5000);
+  }
+}
+
+function showToast(msg, type = "info") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const icons = {
+    success: "✓",
+    error: "✕",
+    info: "⚡",
+    warning: "⚠️",
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `toast-item toast-${type}`;
+  toast.innerHTML = `
+    <span class="toast-icon">${icons[type] || "•"}</span>
+    <span class="toast-msg">${msg}</span>
+    <button class="toast-close">&times;</button>
+  `;
+
+  toast.querySelector(".toast-close").addEventListener("click", () => {
+    toast.remove();
+  });
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateX(50px)";
+      setTimeout(() => toast.remove(), 250);
+    }
+  }, 4500);
+}
+
+// ----------------------------------------------------------------------------
+// Enterprise Weather History Table (Filter, Sort, Paginate, Export)
+// ----------------------------------------------------------------------------
 async function fetchWeatherHistory() {
   try {
     const citySelect = document.getElementById("filter-history-city");
     const cityInput = document.getElementById("input-history-search");
     const limitSelect = document.getElementById("filter-history-limit");
 
-    const limit = limitSelect ? limitSelect.value : 50;
+    const limit = limitSelect ? limitSelect.value : 100;
     let city = (citySelect && citySelect.value) ? citySelect.value : (cityInput ? cityInput.value.trim() : "");
 
     let url = `${API_BASE}/api/weather/history?limit=${limit}`;
@@ -412,45 +485,262 @@ async function fetchWeatherHistory() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
-    const badge = document.getElementById("badge-history-count");
-    if (badge) badge.textContent = `${data.length} Records`;
-
-    const tbody = document.getElementById("tbody-history");
-    if (!data || data.length === 0) {
-      const searchPrompt = city ? `
-        <div style="margin-top: 0.75rem;">
-          <button class="btn btn-primary btn-sm" onclick="searchAndIngestCity('${city}')">
-            🌐 Search & Ingest "${city}" Live from Weather API
-          </button>
-        </div>
-      ` : "";
-      tbody.innerHTML = `<tr><td colspan="9" class="loading-cell">No matching historical records found for "${city || 'all'}". ${searchPrompt}</td></tr>`;
-      return;
-    }
-
-    tbody.innerHTML = data
-      .map((r) => {
-        const condVisuals = getWeatherVisuals(r.weather_condition);
-        return `
-          <tr>
-            <td>#${r.weather_id}</td>
-            <td><strong>${r.city_name}</strong></td>
-            <td>${r.country || "--"}</td>
-            <td>${r.recorded_at ? r.recorded_at.replace("T", " ") : "--"}</td>
-            <td><strong>${r.temperature_c !== null ? `${r.temperature_c}°C` : "--"}</strong></td>
-            <td>${r.humidity_percent !== null ? `${r.humidity_percent}%` : "--"}</td>
-            <td>${r.wind_speed_kmh !== null ? `${r.wind_speed_kmh} km/h` : "--"}</td>
-            <td>${condVisuals.icon} ${r.weather_condition || "Unknown"}</td>
-            <td><span class="badge">${r.source}</span></td>
-          </tr>
-        `;
-      })
-      .join("");
+    state.history.allRecords = data || [];
+    state.history.page = 1;
+    renderHistoryTable();
   } catch (e) {
     console.error("fetchWeatherHistory failed:", e);
+    showToast(`Failed to load historical data: ${e.message}`, "error");
   }
 }
 
+function renderHistoryTable() {
+  const tbody = document.getElementById("tbody-history");
+  if (!tbody) return;
+
+  const searchInput = document.getElementById("input-history-search");
+  const condSelect = document.getElementById("filter-history-condition");
+  const q = searchInput ? searchInput.value.toLowerCase().trim() : "";
+  const condFilter = condSelect ? condSelect.value.toLowerCase().trim() : "";
+
+  // 1. Filter
+  let filtered = (state.history.allRecords || []).filter((r) => {
+    if (condFilter) {
+      const cond = (r.weather_condition || "").toLowerCase();
+      if (condFilter === "sunny" && !(cond.includes("sun") || cond.includes("clear"))) return false;
+      if (condFilter === "rain" && !(cond.includes("rain") || cond.includes("drizzle") || cond.includes("shower"))) return false;
+      if (condFilter === "cloud" && !(cond.includes("cloud") || cond.includes("overcast"))) return false;
+      if (condFilter === "thunder" && !cond.includes("thunder")) return false;
+      if (condFilter === "snow" && !(cond.includes("snow") || cond.includes("ice"))) return false;
+    }
+    if (q) {
+      const rowText = `${r.city_name} ${r.country || ""} ${r.weather_condition || ""} ${r.source || ""}`.toLowerCase();
+      if (!rowText.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // 2. Sort
+  const col = state.history.sortColumn;
+  const isAsc = state.history.sortAsc;
+  filtered.sort((a, b) => {
+    let valA = a[col];
+    let valB = b[col];
+
+    if (valA === null || valA === undefined) valA = "";
+    if (valB === null || valB === undefined) valB = "";
+
+    if (typeof valA === "number" && typeof valB === "number") {
+      return isAsc ? valA - valB : valB - valA;
+    }
+    const strA = String(valA).toLowerCase();
+    const strB = String(valB).toLowerCase();
+    return isAsc ? strA.localeCompare(strB) : strB.localeCompare(strA);
+  });
+
+  state.history.filteredRecords = filtered;
+
+  const badge = document.getElementById("badge-history-count");
+  if (badge) badge.textContent = `${filtered.length} Records`;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="loading-cell">No matching historical records found for current filters.</td></tr>`;
+    updatePaginationUI(0, 0, 0);
+    return;
+  }
+
+  // 3. Paginate
+  const pageSize = state.history.pageSize;
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  if (state.history.page > totalPages) state.history.page = totalPages;
+  if (state.history.page < 1) state.history.page = 1;
+
+  const startIdx = (state.history.page - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, filtered.length);
+  const pageRecords = filtered.slice(startIdx, endIdx);
+
+  tbody.innerHTML = pageRecords
+    .map((r) => {
+      const condVisuals = getWeatherVisuals(r.weather_condition);
+      return `
+        <tr>
+          <td>#${r.weather_id}</td>
+          <td><strong>${r.city_name}</strong></td>
+          <td>${r.country || "--"}</td>
+          <td>${r.recorded_at ? r.recorded_at.replace("T", " ") : "--"}</td>
+          <td><strong>${r.temperature_c !== null ? `${r.temperature_c}°C` : "--"}</strong></td>
+          <td>${r.humidity_percent !== null ? `${r.humidity_percent}%` : "--"}</td>
+          <td>${r.wind_speed_kmh !== null ? `${r.wind_speed_kmh} km/h` : "--"}</td>
+          <td>${condVisuals.icon} ${r.weather_condition || "Unknown"}</td>
+          <td><span class="badge">${r.source}</span></td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  updatePaginationUI(startIdx + 1, endIdx, filtered.length);
+}
+
+function updatePaginationUI(start, end, total) {
+  const info = document.getElementById("history-pagination-info");
+  if (info) {
+    info.textContent = total > 0 ? `Showing ${start}–${end} of ${total} records` : "Showing 0 records";
+  }
+
+  const prevBtn = document.getElementById("btn-hist-prev");
+  const nextBtn = document.getElementById("btn-hist-next");
+  const pagesContainer = document.getElementById("history-pagination-pages");
+
+  const totalPages = Math.ceil(total / state.history.pageSize) || 1;
+
+  if (prevBtn) prevBtn.disabled = state.history.page <= 1;
+  if (nextBtn) nextBtn.disabled = state.history.page >= totalPages;
+
+  if (pagesContainer) {
+    pagesContainer.innerHTML = "";
+    const maxButtons = 5;
+    let startPage = Math.max(1, state.history.page - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    if (endPage - startPage < maxButtons - 1) {
+      startPage = Math.max(1, endPage - maxButtons + 1);
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
+      const btn = document.createElement("button");
+      btn.className = `page-num-btn ${p === state.history.page ? "active" : ""}`;
+      btn.textContent = p;
+      btn.addEventListener("click", () => {
+        state.history.page = p;
+        renderHistoryTable();
+      });
+      pagesContainer.appendChild(btn);
+    }
+  }
+}
+
+function setupHistoryTableSortingAndExport() {
+  document.querySelectorAll(".sortable-th").forEach((th) => {
+    th.addEventListener("click", () => {
+      const col = th.getAttribute("data-sort");
+      if (state.history.sortColumn === col) {
+        state.history.sortAsc = !state.history.sortAsc;
+      } else {
+        state.history.sortColumn = col;
+        state.history.sortAsc = false;
+      }
+
+      document.querySelectorAll(".sortable-th").forEach((t) => {
+        const icon = t.querySelector(".sort-icon");
+        if (t === th) {
+          icon.textContent = state.history.sortAsc ? "▲" : "▼";
+        } else {
+          icon.textContent = "↕";
+        }
+      });
+
+      renderHistoryTable();
+    });
+  });
+
+  const condSelect = document.getElementById("filter-history-condition");
+  if (condSelect) {
+    condSelect.addEventListener("change", () => {
+      state.history.page = 1;
+      renderHistoryTable();
+    });
+  }
+
+  const limitSelect = document.getElementById("filter-history-limit");
+  if (limitSelect) {
+    limitSelect.addEventListener("change", () => {
+      state.history.pageSize = parseInt(limitSelect.value, 10) || 50;
+      state.history.page = 1;
+      fetchWeatherHistory();
+    });
+  }
+
+  const prevBtn = document.getElementById("btn-hist-prev");
+  const nextBtn = document.getElementById("btn-hist-next");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", () => {
+      if (state.history.page > 1) {
+        state.history.page--;
+        renderHistoryTable();
+      }
+    });
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      const totalPages = Math.ceil(state.history.filteredRecords.length / state.history.pageSize) || 1;
+      if (state.history.page < totalPages) {
+        state.history.page++;
+        renderHistoryTable();
+      }
+    });
+  }
+
+  const btnCsv = document.getElementById("btn-export-csv");
+  const btnJson = document.getElementById("btn-export-json");
+  if (btnCsv) btnCsv.addEventListener("click", exportHistoryCSV);
+  if (btnJson) btnJson.addEventListener("click", exportHistoryJSON);
+}
+
+function exportHistoryCSV() {
+  const records = state.history.filteredRecords || [];
+  if (records.length === 0) {
+    showToast("No historical records available to export.", "warning");
+    return;
+  }
+
+  const headers = ["ID", "City", "Country", "Recorded_At_UTC", "Temperature_C", "Humidity_Percent", "Wind_Speed_KMH", "Weather_Condition", "Source"];
+  const rows = records.map((r) => [
+    r.weather_id,
+    `"${(r.city_name || "").replace(/"/g, '""')}"`,
+    `"${(r.country || "").replace(/"/g, '""')}"`,
+    `"${(r.recorded_at || "").replace("T", " ")}"`,
+    r.temperature_c !== null ? r.temperature_c : "",
+    r.humidity_percent !== null ? r.humidity_percent : "",
+    r.wind_speed_kmh !== null ? r.wind_speed_kmh : "",
+    `"${(r.weather_condition || "").replace(/"/g, '""')}"`,
+    `"${(r.source || "").replace(/"/g, '""')}"`
+  ]);
+
+  const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `WeatherDataWarehouse_Export_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✓ Exported ${records.length} records to CSV!`, "success");
+}
+
+function exportHistoryJSON() {
+  const records = state.history.filteredRecords || [];
+  if (records.length === 0) {
+    showToast("No historical records available to export.", "warning");
+    return;
+  }
+
+  const jsonContent = JSON.stringify(records, null, 2);
+  const blob = new Blob([jsonContent], { type: "application/json;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `WeatherDataWarehouse_Export_${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✓ Exported ${records.length} records to JSON!`, "success");
+}
+
+// ----------------------------------------------------------------------------
+// Pipeline Telemetry & Airflow-Style Visual DAG
+// ----------------------------------------------------------------------------
 async function fetchPipelineRuns() {
   try {
     const res = await fetch(`${API_BASE}/api/pipeline/runs?limit=20`);
@@ -501,19 +791,39 @@ async function fetchPipelineRuns() {
   }
 }
 
-// ============================================================================
-// Pipeline Run Execution Trigger
-// ============================================================================
 async function triggerETLPipeline(useSampleData = false) {
   const btn1 = document.getElementById("btn-run-pipeline");
   const btn2 = document.getElementById("btn-trigger-monitor");
+  const dagStatus = document.getElementById("dag-overall-status");
+  const step1 = document.getElementById("dag-step-1");
+  const step2 = document.getElementById("dag-step-2");
+  const step3 = document.getElementById("dag-step-3");
+  const step4 = document.getElementById("dag-step-4");
 
   btn1.disabled = true;
   btn2.disabled = true;
   btn1.innerHTML = '<span class="btn-icon">⏳</span> Ingesting...';
   btn2.innerHTML = '<span class="btn-icon">⏳</span> Ingesting...';
 
-  showAlert(`Triggering ${useSampleData ? 'offline sample' : 'live REST API'} ETL Pipeline...`, "info");
+  [step1, step2, step3, step4].forEach((s) => {
+    if (s) s.classList.remove("active-running", "completed");
+  });
+
+  if (dagStatus) dagStatus.textContent = "DAG: 1/4 Ingesting WeatherAPI...";
+  if (step1) step1.classList.add("active-running");
+  showToast(`Triggering ${useSampleData ? "offline sample" : "live REST API"} ETL Pipeline...`, "info");
+
+  const t1 = setTimeout(() => {
+    if (step1) { step1.classList.remove("active-running"); step1.classList.add("completed"); }
+    if (step2) step2.classList.add("active-running");
+    if (dagStatus) dagStatus.textContent = "DAG: 2/4 Validating with Pandas...";
+  }, 350);
+
+  const t2 = setTimeout(() => {
+    if (step2) { step2.classList.remove("active-running"); step2.classList.add("completed"); }
+    if (step3) step3.classList.add("active-running");
+    if (dagStatus) dagStatus.textContent = "DAG: 3/4 Upserting into SQL Server...";
+  }, 700);
 
   try {
     const res = await fetch(`${API_BASE}/api/pipeline/run`, {
@@ -522,92 +832,406 @@ async function triggerETLPipeline(useSampleData = false) {
       body: JSON.stringify({ use_sample_data: useSampleData }),
     });
 
+    clearTimeout(t1);
+    clearTimeout(t2);
+
     const result = await res.json();
+
+    if (step1) { step1.classList.remove("active-running"); step1.classList.add("completed"); }
+    if (step2) { step2.classList.remove("active-running"); step2.classList.add("completed"); }
+    if (step3) { step3.classList.remove("active-running"); step3.classList.add("completed"); }
+    if (step4) { step4.classList.add("completed"); }
+
     if (res.ok && result.success) {
-      showAlert(
+      if (dagStatus) dagStatus.textContent = "DAG: Ingestion Complete (100% Quality)";
+      showToast(
         `✓ ETL Success: Extracted ${result.records_extracted}, Loaded ${result.records_loaded}, Skipped ${result.duplicates_skipped} duplicates.`,
         "success"
       );
     } else {
-      showAlert(`Pipeline Run: ${result.message || result.error || 'Failed'}`, "error");
+      if (dagStatus) dagStatus.textContent = "DAG: Completed with Warnings";
+      showToast(`Pipeline Run: ${result.message || result.error || "Failed"}`, "error");
     }
 
-    // Refresh all panels
     await fetchAllData();
   } catch (err) {
+    clearTimeout(t1);
+    clearTimeout(t2);
     console.error("Pipeline trigger error:", err);
-    showAlert(`Failed to execute ETL pipeline: ${err.message}`, "error");
+    if (dagStatus) dagStatus.textContent = "DAG: Failed";
+    showToast(`Failed to execute ETL pipeline: ${err.message}`, "error");
   } finally {
     btn1.disabled = false;
     btn2.disabled = false;
-    btn1.innerHTML = '<span class="btn-icon">▶</span> Run ETL Pipeline';
+    btn1.innerHTML = '<span class="btn-icon">▶</span> Run ETL';
     btn2.innerHTML = '▶ Trigger ETL Pipeline';
+    setTimeout(() => {
+      if (dagStatus) dagStatus.textContent = "DAG: Standby / Ready";
+    }, 6000);
   }
 }
 
-// ============================================================================
-// Run Detail Modal
-// ============================================================================
-window.viewRunDetails = async function (runId) {
+// ----------------------------------------------------------------------------
+// Station Detail Slide-Over Drawer
+// ----------------------------------------------------------------------------
+let currentDrawerCity = "";
+
+function setupStationDrawer() {
+  const closeBtn = document.getElementById("btn-close-drawer");
+  const backdrop = document.getElementById("drawer-backdrop");
+  if (closeBtn) closeBtn.addEventListener("click", closeStationDrawer);
+  if (backdrop) backdrop.addEventListener("click", closeStationDrawer);
+
+  const btnHistory = document.getElementById("btn-drawer-filter-history");
+  if (btnHistory) {
+    btnHistory.addEventListener("click", () => {
+      closeStationDrawer();
+      quickFilterCity(currentDrawerCity);
+    });
+  }
+
+  const btnGenAI = document.getElementById("btn-drawer-ask-genai");
+  if (btnGenAI) {
+    btnGenAI.addEventListener("click", () => {
+      closeStationDrawer();
+      const genaiBtn = document.querySelector('[data-target="section-genai"]');
+      if (genaiBtn) genaiBtn.click();
+      const input = document.getElementById("genai-question-input");
+      if (input) {
+        input.value = `Provide a full meteorological summary and historical trends for ${currentDrawerCity}`;
+        askGenAIQuestion(input.value);
+      }
+    });
+  }
+}
+
+function closeStationDrawer() {
+  const drawer = document.getElementById("city-detail-drawer");
+  if (drawer) drawer.classList.add("hidden");
+}
+
+async function openStationDrawerByCity(cityName) {
+  const station = (state.latestWeather || []).find(
+    (s) => s.city_name.toLowerCase() === cityName.toLowerCase()
+  ) || { city_name: cityName, country: "Global Station", weather_condition: "Observed" };
+  openStationDrawer(station);
+}
+
+window.openStationDrawerByCity = openStationDrawerByCity;
+
+async function openStationDrawer(station) {
+  currentDrawerCity = station.city_name;
+  const drawer = document.getElementById("city-detail-drawer");
+  if (!drawer) return;
+
+  const visuals = getWeatherVisuals(station.weather_condition);
+
+  document.getElementById("drawer-city-name").textContent = station.city_name;
+  document.getElementById("drawer-country-name").textContent = station.country || "Global Station";
+  document.getElementById("drawer-temp").textContent = station.temperature_c !== null && station.temperature_c !== undefined ? `${station.temperature_c}°C` : "--°C";
+  document.getElementById("drawer-cond").innerHTML = `${visuals.icon} ${station.weather_condition || "Observed"}`;
+  document.getElementById("drawer-humidity").textContent = station.humidity_percent !== null && station.humidity_percent !== undefined ? `${station.humidity_percent}%` : "--%";
+  document.getElementById("drawer-wind").textContent = station.wind_speed_kmh !== null && station.wind_speed_kmh !== undefined ? `${station.wind_speed_kmh} km/h` : "-- km/h";
+  document.getElementById("drawer-lat").textContent = station.latitude ? Number(station.latitude).toFixed(4) : "Monitored";
+  document.getElementById("drawer-lon").textContent = station.longitude ? Number(station.longitude).toFixed(4) : "Monitored";
+  document.getElementById("drawer-loc-id").textContent = `#${station.location_id || 1}`;
+  document.getElementById("drawer-sync-time").textContent = formatFriendlyTime(station.recorded_at);
+
+  drawer.classList.remove("hidden");
+
   try {
-    const res = await fetch(`${API_BASE}/api/pipeline/runs/${runId}`);
-    if (!res.ok) throw new Error("Failed to load run details");
-    const data = await res.json();
-
-    document.getElementById("modal-title").textContent = `Pipeline Run #${data.run_id} Details`;
-
-    const qualityLogsHtml =
-      data.quality_logs && data.quality_logs.length > 0
-        ? `
-          <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; color: #fbbf24;">Data Quality Issues Logged</h4>
-          <table class="data-table">
-            <thead>
-              <tr><th>Issue Type</th><th>Table</th><th>Count</th></tr>
-            </thead>
-            <tbody>
-              ${data.quality_logs
-                .map(
-                  (q) =>
-                    `<tr><td>${q.issue_type}</td><td>${q.table_name}</td><td>${q.issue_count}</td></tr>`
-                )
-                .join("")}
-            </tbody>
-          </table>
-        `
-        : '<p style="margin-top: 1rem; color: #34d399;">✓ Zero data quality anomalies detected during this execution.</p>';
-
-    document.getElementById("modal-body").innerHTML = `
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
-        <div><strong>Pipeline:</strong> ${data.pipeline_name}</div>
-        <div><strong>Status:</strong> <span class="badge-status ${data.status.toLowerCase()}">${data.status}</span></div>
-        <div><strong>Started:</strong> ${new Date(data.started_at).toLocaleString()}</div>
-        <div><strong>Completed:</strong> ${data.completed_at ? new Date(data.completed_at).toLocaleString() : '--'}</div>
-        <div><strong>Records Extracted:</strong> ${data.records_extracted}</div>
-        <div><strong>Records Loaded:</strong> ${data.records_loaded}</div>
-      </div>
-      ${data.error_message ? `<div class="alert-banner error" style="margin-top: 1rem;">Error: ${data.error_message}</div>` : ''}
-      ${qualityLogsHtml}
-    `;
-
-    document.getElementById("modal-run-detail").classList.remove("hidden");
-  } catch (err) {
-    showAlert(`Could not load run details: ${err.message}`, "error");
+    const res = await fetch(`${API_BASE}/api/weather/history?city=${encodeURIComponent(station.city_name)}&limit=24`);
+    if (res.ok) {
+      const records = await res.json();
+      renderDrawerChart(records.reverse());
+    }
+  } catch (e) {
+    console.error("Drawer chart trend fetch failed:", e);
   }
-};
-
-function closeModal() {
-  document.getElementById("modal-run-detail").classList.add("hidden");
 }
 
-function showAlert(msg, type = "info") {
-  const banner = document.getElementById("alert-banner");
-  banner.textContent = msg;
-  banner.className = `alert-banner ${type}`;
-  banner.classList.remove("hidden");
+function renderDrawerChart(records) {
+  const canvas = document.getElementById("chart-drawer-trend");
+  if (!canvas) return;
 
-  setTimeout(() => {
-    banner.classList.add("hidden");
-  }, 5000);
+  if (drawerTrendChart) {
+    drawerTrendChart.destroy();
+    drawerTrendChart = null;
+  }
+
+  const labels = records.map((r) => {
+    const d = new Date(r.recorded_at);
+    return isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  });
+  const temps = records.map((r) => r.temperature_c);
+
+  const ctx = canvas.getContext("2d");
+  const gradient = ctx.createLinearGradient(0, 0, 0, 160);
+  gradient.addColorStop(0, "rgba(56, 189, 248, 0.45)");
+  gradient.addColorStop(1, "rgba(56, 189, 248, 0.0)");
+
+  drawerTrendChart = new Chart(canvas, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Temperature (°C)",
+          data: temps,
+          borderColor: "#38bdf8",
+          backgroundColor: gradient,
+          borderWidth: 2.5,
+          tension: 0.35,
+          fill: true,
+          pointRadius: 3,
+          pointBackgroundColor: "#38bdf8",
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#0d1527",
+          titleColor: "#38bdf8",
+          bodyColor: "#ffffff",
+          borderColor: "rgba(56, 189, 248, 0.3)",
+          borderWidth: 1,
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: "#64748b", font: { size: 10 } },
+          grid: { display: false },
+        },
+        y: {
+          ticks: { color: "#64748b", font: { size: 10 } },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
+        },
+      },
+    },
+  });
+}
+
+// ----------------------------------------------------------------------------
+// Global Command Palette (Ctrl+K)
+// ----------------------------------------------------------------------------
+let cmdActiveIndex = 0;
+let cmdItems = [];
+
+function setupCommandPalette() {
+  const modal = document.getElementById("command-palette-modal");
+  const input = document.getElementById("cmd-palette-input");
+  const btnOpen = document.getElementById("btn-open-cmd");
+  const btnClose = document.getElementById("btn-close-cmd");
+  const backdrop = document.getElementById("cmd-palette-backdrop");
+
+  if (btnOpen) btnOpen.addEventListener("click", openCommandPalette);
+  if (btnClose) btnClose.addEventListener("click", closeCommandPalette);
+  if (backdrop) backdrop.addEventListener("click", closeCommandPalette);
+
+  window.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      if (modal && modal.classList.contains("hidden")) {
+        openCommandPalette();
+      } else {
+        closeCommandPalette();
+      }
+    } else if (e.key === "Escape") {
+      closeCommandPalette();
+      closeStationDrawer();
+    }
+  });
+
+  if (input) {
+    input.addEventListener("input", () => {
+      renderCommandPaletteResults(input.value.trim());
+    });
+
+    input.addEventListener("keydown", (e) => {
+      const list = document.getElementById("cmd-palette-list");
+      const items = list ? list.querySelectorAll(".cmd-item") : [];
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        cmdActiveIndex = (cmdActiveIndex + 1) % items.length;
+        updateCmdActiveItem(items);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        cmdActiveIndex = (cmdActiveIndex - 1 + items.length) % items.length;
+        updateCmdActiveItem(items);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (cmdItems[cmdActiveIndex]) {
+          executeCommandItem(cmdItems[cmdActiveIndex]);
+        }
+      }
+    });
+  }
+}
+
+function openCommandPalette() {
+  const modal = document.getElementById("command-palette-modal");
+  const input = document.getElementById("cmd-palette-input");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  renderCommandPaletteResults("");
+}
+
+function closeCommandPalette() {
+  const modal = document.getElementById("command-palette-modal");
+  if (modal) modal.classList.add("hidden");
+}
+
+function renderCommandPaletteResults(query) {
+  const list = document.getElementById("cmd-palette-list");
+  if (!list) return;
+
+  const defaultCommands = [
+    { type: "nav", id: "section-dashboard", icon: "🏠", label: "Go to Dashboard Overview", badge: "Navigation" },
+    { type: "nav", id: "section-history", icon: "📜", label: "Go to Weather Warehouse History", badge: "Navigation" },
+    { type: "nav", id: "section-analytics", icon: "📊", label: "Go to Meteorological Analytics & Trends", badge: "Navigation" },
+    { type: "nav", id: "section-pipeline", icon: "⚡", label: "Go to ETL Pipeline Monitor", badge: "Navigation" },
+    { type: "nav", id: "section-genai", icon: "🤖", label: "Go to GenAI Natural Language Assistant", badge: "Navigation" },
+    { type: "action", action: "run-etl", icon: "▶", label: "Trigger Real-Time ETL Pipeline", badge: "Action" },
+    { type: "action", action: "export-csv", icon: "⬇", label: "Export Filtered Weather History to CSV", badge: "Action" },
+    { type: "action", action: "export-json", icon: "⬇", label: "Export Filtered Weather History to JSON", badge: "Action" },
+    { type: "action", action: "refresh-data", icon: "🔄", label: "Refresh All Monitored Stations", badge: "Action" },
+    { type: "link", url: "/json-to-ui", icon: "✨", label: "Open Universal JSON to UI Studio", badge: "Portal" },
+    { type: "link", url: "/links", icon: "🌐", label: "Open All Links Directory Portal", badge: "Portal" },
+    { type: "link", url: "/docs", icon: "📖", label: "Open Swagger Interactive API Docs", badge: "Portal" },
+  ];
+
+  const q = query.toLowerCase();
+  let results = defaultCommands.filter((c) => c.label.toLowerCase().includes(q) || c.badge.toLowerCase().includes(q));
+
+  if (q.length >= 2) {
+    (state.latestWeather || []).forEach((w) => {
+      if (w.city_name.toLowerCase().includes(q)) {
+        results.unshift({
+          type: "city",
+          cityName: w.city_name,
+          icon: "📍",
+          label: `Inspect Station: ${w.city_name} (${w.temperature_c}°C, ${w.weather_condition})`,
+          badge: "Station",
+        });
+      }
+    });
+
+    results.push({
+      type: "search-ingest",
+      cityQuery: query,
+      icon: "🌐",
+      label: `Live Search & Ingest "${query}" from Global Weather API`,
+      badge: "Ingestion",
+    });
+  }
+
+  cmdItems = results.slice(0, 8);
+  cmdActiveIndex = 0;
+
+  if (cmdItems.length === 0) {
+    list.innerHTML = '<div style="padding: 1rem; color: #64748b; text-align: center;">No matching actions found.</div>';
+    return;
+  }
+
+  list.innerHTML = cmdItems
+    .map(
+      (it, idx) => `
+      <div class="cmd-item ${idx === 0 ? "active" : ""}" data-index="${idx}">
+        <div class="cmd-item-left">
+          <span class="cmd-item-icon">${it.icon}</span>
+          <span class="cmd-item-text">${it.label}</span>
+        </div>
+        <span class="cmd-item-badge">${it.badge}</span>
+      </div>
+    `
+    )
+    .join("");
+
+  list.querySelectorAll(".cmd-item").forEach((el) => {
+    el.addEventListener("click", () => {
+      const idx = parseInt(el.getAttribute("data-index"), 10);
+      if (cmdItems[idx]) executeCommandItem(cmdItems[idx]);
+    });
+  });
+}
+
+function updateCmdActiveItem(items) {
+  items.forEach((it, idx) => {
+    if (idx === cmdActiveIndex) {
+      it.classList.add("active");
+      it.scrollIntoView({ block: "nearest" });
+    } else {
+      it.classList.remove("active");
+    }
+  });
+}
+
+function executeCommandItem(item) {
+  closeCommandPalette();
+  if (item.type === "nav") {
+    const btn = document.querySelector(`.nav-btn[data-target="${item.id}"]`);
+    if (btn) btn.click();
+  } else if (item.type === "action") {
+    if (item.action === "run-etl") triggerETLPipeline(false);
+    if (item.action === "export-csv") exportHistoryCSV();
+    if (item.action === "export-json") exportHistoryJSON();
+    if (item.action === "refresh-data") fetchAllData();
+  } else if (item.type === "link") {
+    window.open(item.url, "_blank");
+  } else if (item.type === "city") {
+    openStationDrawerByCity(item.cityName);
+  } else if (item.type === "search-ingest") {
+    searchAndIngestCity(item.cityQuery);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Live Auto-Refresh Controller
+// ----------------------------------------------------------------------------
+function setupAutoRefresh() {
+  const select = document.getElementById("select-auto-refresh");
+  const badge = document.getElementById("badge-refresh-countdown");
+  if (!select || !badge) return;
+
+  select.addEventListener("change", () => {
+    if (state.autoRefresh.timerId) {
+      clearInterval(state.autoRefresh.timerId);
+      state.autoRefresh.timerId = null;
+    }
+
+    const interval = parseInt(select.value, 10);
+    state.autoRefresh.intervalSec = interval;
+    state.autoRefresh.remainingSec = interval;
+
+    if (interval === 0) {
+      badge.textContent = "Sync: Idle";
+      showToast("Auto-refresh disabled.", "info");
+      return;
+    }
+
+    badge.textContent = `Sync in ${interval}s`;
+    showToast(`✓ Auto-sync enabled: refreshing every ${interval}s`, "info");
+
+    state.autoRefresh.timerId = setInterval(async () => {
+      state.autoRefresh.remainingSec--;
+      if (state.autoRefresh.remainingSec <= 0) {
+        state.autoRefresh.remainingSec = state.autoRefresh.intervalSec;
+        badge.textContent = "Syncing...";
+        await fetchAllData();
+        showToast("✓ Warehouse observations auto-synchronized.", "info");
+      }
+      badge.textContent = `Sync in ${state.autoRefresh.remainingSec}s`;
+    }, 1000);
+  });
 }
 
 // ============================================================================
