@@ -1,10 +1,18 @@
 import logging
 from datetime import datetime, timezone
-from fastapi import FastAPI
+from pathlib import Path
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from backend.config import settings
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
-# Configure logging
+from backend.config import settings
+from backend.database import test_connection
+from backend.routes.weather_routes import router as weather_router
+from backend.routes.analytics_routes import router as analytics_router
+from backend.routes.pipeline_routes import router as pipeline_router
+
+# Configure root logging
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -15,9 +23,11 @@ app = FastAPI(
     title="WeatherData — Weather API Data Warehouse & Analytics Platform",
     description="Production-grade Weather Data Warehouse & ETL Analytics API.",
     version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
-# Enable CORS for local development and frontend dashboard
+# Enable CORS for frontend clients
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,15 +36,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register API routers
+app.include_router(weather_router)
+app.include_router(analytics_router)
+app.include_router(pipeline_router)
 
-@app.get("/", tags=["Health"])
-def health_check():
-    """Application health check endpoint."""
+# Mount frontend directory for static assets (CSS, JS)
+frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
+if frontend_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
+
+
+@app.get("/", tags=["Health & WebUI"])
+def root_endpoint(request: Request):
+    """
+    Root endpoint:
+    - Returns interactive HTML Dashboard for browser visits (text/html).
+    - Returns health check JSON for API requests (application/json or curl).
+    """
+    accept_header = request.headers.get("accept", "")
+    index_file = frontend_dir / "index.html"
+
+    # If browser requests HTML and index.html exists, serve the dashboard
+    if "text/html" in accept_header and index_file.exists():
+        return FileResponse(index_file)
+
+    # Otherwise return Health Check JSON
+    db_status = test_connection()
     return {
-        "status": "healthy",
+        "status": "healthy" if db_status.get("connected") else "degraded",
         "service": "WeatherData Platform",
         "version": "1.0.0",
-        "database": settings.db_database,
+        "database": db_status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+@app.get("/health", tags=["Health & WebUI"])
+def explicit_health_check():
+    """Dedicated health check endpoint returning service and database status."""
+    db_status = test_connection()
+    return {
+        "status": "healthy" if db_status.get("connected") else "degraded",
+        "service": "WeatherData Platform",
+        "version": "1.0.0",
+        "database": db_status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
