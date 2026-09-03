@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger("weatherdata.main")
 
 app = FastAPI(
-    title="WeatherData — Weather API Data Warehouse & Analytics Platform",
+    title="WeatherFlow — Weather API Data Warehouse & Analytics Platform",
     description="Production-grade Weather Data Warehouse & ETL Analytics API.",
     version="1.0.0",
     docs_url=None,  # Custom enhanced Swagger UI served at /docs
@@ -118,7 +118,7 @@ def root_endpoint(request: Request):
         db_status = test_connection()
         return {
             "status": "healthy" if db_status.get("connected") else "degraded",
-            "service": "WeatherData Platform",
+            "service": "WeatherFlow Platform",
             "version": "1.0.0",
             "database": db_status,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -128,7 +128,7 @@ def root_endpoint(request: Request):
     if index_file.exists():
         return FileResponse(index_file)
 
-    return HTMLResponse("<h1>WeatherData Dashboard</h1><p>index.html not found</p>")
+    return HTMLResponse("<h1>WeatherFlow Dashboard</h1><p>index.html not found</p>")
 
 
 @app.get("/dashboard", tags=["Health & WebUI"], include_in_schema=False)
@@ -137,7 +137,7 @@ def dashboard_endpoint():
     index_file = frontend_dir / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
-    return HTMLResponse("<h1>WeatherData Dashboard</h1><p>index.html not found</p>")
+    return HTMLResponse("<h1>WeatherFlow Dashboard</h1><p>index.html not found</p>")
 
 
 @app.get("/health", tags=["Health & WebUI"])
@@ -146,7 +146,7 @@ def explicit_health_check():
     db_status = test_connection()
     return {
         "status": "healthy" if db_status.get("connected") else "degraded",
-        "service": "WeatherData Platform",
+        "service": "WeatherFlow Platform",
         "version": "1.0.0",
         "database": db_status,
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -169,7 +169,7 @@ def all_links_directory(request: Request):
 
     base = f"http://{settings.app_host}:{settings.app_port}"
     return {
-        "platform": "WEATHERDATA Platform",
+        "platform": "WEATHERFLOW Platform",
         "one_link_portal": f"{base}/links",
         "portals_and_ui": {
             "web_dashboard": f"{base}/",
@@ -223,7 +223,7 @@ def custom_swagger_docs(request: Request):
     """
     base_res = get_swagger_ui_html(
         openapi_url=app.openapi_url,
-        title="WEATHERDATA — Interactive API Console & Documentation",
+        title="WEATHERFLOW — Interactive API Console & Documentation",
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_ui_parameters={
             "filter": True,
@@ -250,7 +250,7 @@ def custom_swagger_docs(request: Request):
     <nav class="custom-docs-navbar">
       <a href="/" class="custom-docs-brand">
         <div class="custom-docs-brand-icon">⚡</div>
-        <div class="custom-docs-brand-title">WEATHERDATA API EXPLORER</div>
+        <div class="custom-docs-brand-title">WEATHERFLOW API EXPLORER</div>
       </a>
       <div class="custom-docs-nav-links">
         <a href="/" class="custom-docs-nav-btn primary">🏠 Main Dashboard</a>

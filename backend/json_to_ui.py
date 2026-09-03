@@ -1,5 +1,5 @@
 """
-WEATHERDATA Platform — Universal JSON-to-UI HTML Generator
+WEATHERFLOW Platform — Universal JSON-to-UI HTML Generator
 Converts any API JSON response into a modern, production-grade interactive Web UI.
 Includes live table filtering, KPI metric cards, JSON syntax inspector, and CSV export.
 """
@@ -40,7 +40,7 @@ def generate_json_to_ui_html(path: str, json_str: str, status_code: int = 200) -
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{endpoint_title} — WEATHERDATA API UI</title>
+  <title>{endpoint_title} — WEATHERFLOW API UI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -361,7 +361,7 @@ def generate_json_to_ui_html(path: str, json_str: str, status_code: int = 200) -
   <header class="navbar">
     <a href="/" class="brand">
       <div class="brand-icon">⚡</div>
-      <div class="brand-title">WEATHERDATA</div>
+      <div class="brand-title">WEATHERFLOW</div>
     </a>
     <nav class="nav-links">
       <a href="/" class="nav-link">🏠 Main Dashboard</a>
@@ -415,7 +415,7 @@ def generate_json_to_ui_html(path: str, json_str: str, status_code: int = 200) -
   </main>
 
   <footer class="footer">
-    WEATHERDATA &bull; Automated JSON to UI Engine &bull; Microsoft SQL Server &bull; FastAPI
+    WEATHERFLOW &bull; Automated JSON to UI Engine &bull; Microsoft SQL Server &bull; FastAPI
   </footer>
 
   <script>

@@ -1,5 +1,5 @@
 /**
- * WEATHERDATA Platform — Frontend Dashboard Controller
+ * WEATHERFLOW Platform — Frontend Dashboard Controller
  * Vanilla JavaScript (ES6+), Fetch API, Chart.js
  */
 
