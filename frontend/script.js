@@ -45,12 +45,12 @@ const state = {
 // Initialization & Event Listeners
 // ============================================================================
 document.addEventListener("DOMContentLoaded", () => {
-  setupNavigation();
-  setupActions();
-  setupCommandPalette();
-  setupAutoRefresh();
-  setupStationDrawer();
-  setupHistoryTableSortingAndExport();
+  try { setupNavigation(); } catch (e) { console.error("setupNavigation:", e); }
+  try { setupActions(); } catch (e) { console.error("setupActions:", e); }
+  try { setupCommandPalette(); } catch (e) { console.error("setupCommandPalette:", e); }
+  try { setupAutoRefresh(); } catch (e) { console.error("setupAutoRefresh:", e); }
+  try { setupStationDrawer(); } catch (e) { console.error("setupStationDrawer:", e); }
+  try { setupHistoryTableSortingAndExport(); } catch (e) { console.error("setupHistoryTableSortingAndExport:", e); }
   fetchAllData();
 });
 
@@ -121,7 +121,8 @@ function setupActions() {
   }
 
   // Modal Close
-  document.getElementById("modal-close").addEventListener("click", closeModal);
+  const modalCloseBtn = document.getElementById("modal-close");
+  if (modalCloseBtn) modalCloseBtn.addEventListener("click", closeModal);
   window.addEventListener("click", (e) => {
     if (e.target === document.getElementById("modal-run-detail")) {
       closeModal();
@@ -191,24 +192,37 @@ async function fetchSummary() {
     state.summary = data;
 
     // Update KPI Cards
-    document.getElementById("kpi-total-records").textContent = data.total_records.toLocaleString();
-    document.getElementById("kpi-cities-count").textContent = `${data.total_locations} Cities Monitored`;
+    const totalRecordsEl = document.getElementById("kpi-total-records");
+    if (totalRecordsEl) {
+      totalRecordsEl.textContent = data.total_records !== undefined && data.total_records !== null ? data.total_records.toLocaleString() : "--";
+    }
+    const citiesCountEl = document.getElementById("kpi-cities-count");
+    if (citiesCountEl) {
+      citiesCountEl.textContent = `${data.total_locations ?? 0} Cities Monitored`;
+    }
 
-    const avgTemp = data.avg_temperature_c !== null ? `${data.avg_temperature_c}°C` : "--°C";
-    document.getElementById("kpi-latest-temp").textContent = avgTemp;
+    const avgTemp = data.avg_temperature_c !== null && data.avg_temperature_c !== undefined ? `${data.avg_temperature_c}°C` : "--°C";
+    const latestTempEl = document.getElementById("kpi-latest-temp");
+    if (latestTempEl) latestTempEl.textContent = avgTemp;
 
-    const minTemp = data.min_temperature_c !== null ? `${data.min_temperature_c}°C` : "--";
-    const maxTemp = data.max_temperature_c !== null ? `${data.max_temperature_c}°C` : "--";
-    document.getElementById("kpi-temp-range").textContent = `Min: ${minTemp} | Max: ${maxTemp}`;
+    const minTemp = data.min_temperature_c !== null && data.min_temperature_c !== undefined ? `${data.min_temperature_c}°C` : "--";
+    const maxTemp = data.max_temperature_c !== null && data.max_temperature_c !== undefined ? `${data.max_temperature_c}°C` : "--";
+    const tempRangeEl = document.getElementById("kpi-temp-range");
+    if (tempRangeEl) tempRangeEl.textContent = `Min: ${minTemp} | Max: ${maxTemp}`;
 
-    const avgHum = data.avg_humidity_percent !== null ? `${data.avg_humidity_percent}%` : "--%";
-    document.getElementById("kpi-avg-humidity").textContent = avgHum;
+    const avgHum = data.avg_humidity_percent !== null && data.avg_humidity_percent !== undefined ? `${data.avg_humidity_percent}%` : "--%";
+    const avgHumEl = document.getElementById("kpi-avg-humidity");
+    if (avgHumEl) avgHumEl.textContent = avgHum;
 
     // Update Analytics Section Stats
-    document.getElementById("stat-max-temp").textContent = maxTemp;
-    document.getElementById("stat-min-temp").textContent = minTemp;
-    document.getElementById("stat-mean-temp").textContent = avgTemp;
-    document.getElementById("stat-mean-humidity").textContent = avgHum;
+    const statMax = document.getElementById("stat-max-temp");
+    if (statMax) statMax.textContent = maxTemp;
+    const statMin = document.getElementById("stat-min-temp");
+    if (statMin) statMin.textContent = minTemp;
+    const statMean = document.getElementById("stat-mean-temp");
+    if (statMean) statMean.textContent = avgTemp;
+    const statMeanHum = document.getElementById("stat-mean-humidity");
+    if (statMeanHum) statMeanHum.textContent = avgHum;
   } catch (e) {
     console.error("fetchSummary failed:", e);
   }
@@ -790,6 +804,65 @@ async function fetchPipelineRuns() {
     console.error("fetchPipelineRuns failed:", e);
   }
 }
+
+function closeModal() {
+  const modal = document.getElementById("modal-run-detail");
+  if (modal) modal.classList.add("hidden");
+}
+
+window.closeModal = closeModal;
+
+window.viewRunDetails = async function (runId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/pipeline/runs/${runId}`);
+    if (!res.ok) throw new Error("Failed to load run details");
+    const data = await res.json();
+
+    const modalTitle = document.getElementById("modal-title");
+    if (modalTitle) modalTitle.textContent = `Pipeline Run #${data.run_id} Details`;
+
+    const qualityLogsHtml =
+      data.quality_logs && data.quality_logs.length > 0
+        ? `
+          <h4 style="margin-top: 1rem; margin-bottom: 0.5rem; color: #fbbf24;">Data Quality Issues Logged</h4>
+          <table class="data-table">
+            <thead>
+              <tr><th>Issue Type</th><th>Table</th><th>Count</th></tr>
+            </thead>
+            <tbody>
+              ${data.quality_logs
+                .map(
+                  (q) =>
+                    `<tr><td>${q.issue_type}</td><td>${q.table_name}</td><td>${q.issue_count}</td></tr>`
+                )
+                .join("")}
+            </tbody>
+          </table>
+        `
+        : '<p style="margin-top: 1rem; color: #34d399;">✓ Zero data quality anomalies detected during this execution.</p>';
+
+    const modalBody = document.getElementById("modal-body");
+    if (modalBody) {
+      modalBody.innerHTML = `
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+          <div><strong>Pipeline:</strong> ${data.pipeline_name}</div>
+          <div><strong>Status:</strong> <span class="badge-status ${data.status.toLowerCase()}">${data.status}</span></div>
+          <div><strong>Started:</strong> ${new Date(data.started_at).toLocaleString()}</div>
+          <div><strong>Completed:</strong> ${data.completed_at ? new Date(data.completed_at).toLocaleString() : '--'}</div>
+          <div><strong>Records Extracted:</strong> ${data.records_extracted}</div>
+          <div><strong>Records Loaded:</strong> ${data.records_loaded}</div>
+        </div>
+        ${data.error_message ? `<div class="alert-banner error" style="margin-top: 1rem;">Error: ${data.error_message}</div>` : ''}
+        ${qualityLogsHtml}
+      `;
+    }
+
+    const modal = document.getElementById("modal-run-detail");
+    if (modal) modal.classList.remove("hidden");
+  } catch (err) {
+    showAlert(`Could not load run details: ${err.message}`, "error");
+  }
+};
 
 async function triggerETLPipeline(useSampleData = false) {
   const btn1 = document.getElementById("btn-run-pipeline");

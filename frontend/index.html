@@ -32,32 +32,31 @@
       </div>
 
       <div class="header-actions">
+        <div class="header-status-badge">
+          <span class="pulse-dot"></span> SQL Server Live
+        </div>
+        <button id="btn-run-pipeline" class="btn btn-primary btn-pipeline-glow" title="Execute real-time weather ingestion pipeline">
+          <span class="btn-icon">▶</span> Run ETL
+        </button>
+        <button id="btn-refresh" class="btn-icon-square" title="Refresh platform data">
+          <span>🔄</span>
+        </button>
         <button id="btn-open-cmd" class="btn-cmd-palette" title="Global Quick Actions (Ctrl+K)">
           <span class="cmd-icon">⌘</span>
-          <span class="cmd-text">Commands</span>
           <kbd class="cmd-kbd">Ctrl K</kbd>
         </button>
         <div class="header-refresh-group">
-          <span class="refresh-countdown-badge" id="badge-refresh-countdown" title="Live sync countdown">Sync: Idle</span>
           <select id="select-auto-refresh" class="header-refresh-select" title="Auto-refresh interval">
-            <option value="0">Auto-sync: Off</option>
-            <option value="30">Every 30s</option>
-            <option value="60">Every 1m</option>
-            <option value="300">Every 5m</option>
+            <option value="0">Sync: Off</option>
+            <option value="30">30s</option>
+            <option value="60">1m</option>
+            <option value="300">5m</option>
           </select>
+          <span class="refresh-countdown-badge" id="badge-refresh-countdown" title="Live sync countdown">Idle</span>
         </div>
         <a href="/json-to-ui" class="header-portal-btn" target="_blank" title="Universal JSON to UI Studio">✨ Studio</a>
         <a href="/links" class="header-portal-btn" target="_blank" title="All Links Directory">🌐 Links</a>
         <a href="/docs" class="header-portal-btn" target="_blank" title="Swagger API Documentation">📖 Docs</a>
-        <div class="header-status-badge">
-          <span class="pulse-dot"></span> SQL Server Live
-        </div>
-        <button id="btn-run-pipeline" class="btn btn-primary btn-pipeline-glow">
-          <span class="btn-icon">▶</span> Run ETL
-        </button>
-        <button id="btn-refresh" class="btn-icon-square" title="Refresh data">
-          <span>🔄</span>
-        </button>
       </div>
     </header>
 
