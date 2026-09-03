@@ -33,6 +33,7 @@ def test_safe_sql_validator_blocks_ddl_and_dml():
 def test_genai_sql_generation():
     """Verify natural language intents generate proper SQL queries."""
     assistant = WeatherGenAIAssistant()
+    assistant.provider = "rule_based"
 
     sql1 = assistant.generate_sql("Which city has the highest temperature?")
     assert "ORDER BY w.temperature_c DESC" in sql1

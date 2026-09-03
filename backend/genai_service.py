@@ -2,6 +2,7 @@ import re
 import json
 import logging
 from typing import Any, Dict, List, Optional
+from decimal import Decimal
 import requests
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -120,9 +121,9 @@ class WeatherGenAIAssistant:
         self._set_default_model()
 
     def _set_default_model(self):
-        if not self.model:
+        if not self.model or self.model in ("gemini-1.5-flash", "gemini-2.0-flash"):
             defaults = {
-                "gemini": "gemini-1.5-flash",
+                "gemini": "gemini-flash-lite-latest",
                 "openai": "gpt-4o-mini",
                 "groq": "llama-3.3-70b-versatile",
                 "deepseek": "deepseek-chat",
@@ -167,7 +168,7 @@ class WeatherGenAIAssistant:
             "masked_key": masked_key,
             "base_url": self.base_url,
             "supported_providers": [
-                {"id": "gemini", "name": "Google Gemini", "default_model": "gemini-1.5-flash"},
+                {"id": "gemini", "name": "Google Gemini (Active)", "default_model": "gemini-3.6-flash"},
                 {"id": "openai", "name": "OpenAI (ChatGPT)", "default_model": "gpt-4o-mini"},
                 {"id": "groq", "name": "Groq (Ultra-Fast Llama)", "default_model": "llama-3.3-70b-versatile"},
                 {"id": "deepseek", "name": "DeepSeek", "default_model": "deepseek-chat"},
@@ -184,16 +185,27 @@ class WeatherGenAIAssistant:
 
         try:
             if self.provider == "gemini":
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent?key={self.api_key}"
-                payload = {
-                    "contents": [{"parts": [{"text": f"{system_prompt}\n\nUser Request: {user_prompt}"}]}],
-                    "generationConfig": {"temperature": 0.1, "maxOutputTokens": 600},
-                }
-                res = requests.post(url, json=payload, timeout=12)
-                if res.ok:
-                    data = res.json()
-                    return data["candidates"][0]["content"]["parts"][0]["text"]
-                logger.warning(f"Gemini API error ({res.status_code}): {res.text}")
+                # Fast, stable candidate models to try in order of latency
+                candidate_models = []
+                if self.model and self.model not in ("gemini-1.5-flash", "gemini-2.0-flash", "gemini-3.6-flash"):
+                    candidate_models.append(self.model)
+                for cand in ["gemini-flash-lite-latest", "gemini-3.5-flash-lite", "gemini-flash-latest", "gemini-3.5-flash"]:
+                    if cand not in candidate_models:
+                        candidate_models.append(cand)
+
+                for m in candidate_models:
+                    url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={self.api_key}"
+                    payload = {
+                        "contents": [{"parts": [{"text": f"{system_prompt}\n\nUser Request: {user_prompt}"}]}],
+                        "generationConfig": {"temperature": 0.1, "maxOutputTokens": 1024},
+                    }
+                    try:
+                        res = requests.post(url, json=payload, timeout=6)
+                        if res.ok and "candidates" in res.json():
+                            return res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                        logger.warning(f"Gemini model {m} response {res.status_code}. Trying next candidate...")
+                    except Exception as err:
+                        logger.warning(f"Gemini model {m} request failed: {err}")
 
             elif self.provider in ("openai", "groq", "deepseek", "ollama", "custom"):
                 urls = {
@@ -451,37 +463,52 @@ class WeatherGenAIAssistant:
             }
 
         # 3. Execute Read-Only SQL
+        executed_sql = generated_sql
+        raw_rows = []
         try:
-            result = db.execute(text(generated_sql))
+            result = db.execute(text(executed_sql))
             raw_rows = result.mappings().all()
-            rows = []
-            for r in raw_rows:
-                row_dict = {}
-                for k, v in dict(r).items():
-                    row_dict[k] = v.isoformat() if hasattr(v, "isoformat") else v
-                rows.append(row_dict)
-
-            # 4. Explain Results
-            explanation = self.explain_results(question, generated_sql, rows)
-
-            return {
-                "question": question,
-                "sql": generated_sql,
-                "success": True,
-                "rows": rows,
-                "row_count": len(rows),
-                "explanation": explanation,
-                "error": None,
-                "provider": self.provider,
-                "model": self.model,
-            }
         except Exception as e:
-            logger.error(f"Error executing GenAI SQL: {e}")
-            return {
-                "question": question,
-                "sql": generated_sql,
-                "success": False,
-                "error": f"Execution error: {str(e)}",
-                "rows": [],
-                "explanation": "Failed to execute generated query against warehouse.",
-            }
+            logger.warning(f"Generated SQL execution failed ({e}). Falling back to verified rule-based SQL.")
+            executed_sql = self._generate_rule_based_sql(question)
+            try:
+                result = db.execute(text(executed_sql))
+                raw_rows = result.mappings().all()
+            except Exception as e2:
+                logger.error(f"Fallback SQL execution also failed: {e2}")
+                return {
+                    "question": question,
+                    "sql": executed_sql,
+                    "success": False,
+                    "error": f"Execution error: {str(e2)}",
+                    "rows": [],
+                    "explanation": "Failed to execute query against warehouse.",
+                }
+
+        # 4. Clean and serialize row values (handles Decimal, datetime, etc.)
+        rows = []
+        for r in raw_rows:
+            row_dict = {}
+            for k, v in dict(r).items():
+                if isinstance(v, Decimal):
+                    row_dict[k] = float(v)
+                elif hasattr(v, "isoformat"):
+                    row_dict[k] = v.isoformat()
+                else:
+                    row_dict[k] = v
+            rows.append(row_dict)
+
+        # 5. Explain Results (using Gemini or fallback)
+        explanation = self.explain_results(question, executed_sql, rows)
+
+        return {
+            "question": question,
+            "sql": executed_sql,
+            "success": True,
+            "rows": rows,
+            "row_count": len(rows),
+            "explanation": explanation,
+            "error": None,
+            "provider": self.provider,
+            "model": self.model,
+        }
