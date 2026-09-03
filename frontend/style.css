@@ -2451,6 +2451,10 @@ body {
   border-color: rgba(16, 185, 129, 0.35) !important;
   color: #34d399 !important;
   font-weight: 600;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  padding: 0.38rem 0.75rem !important;
+  font-size: 0.8rem !important;
   transition: all 0.2s ease;
 }
 
@@ -2941,6 +2945,42 @@ body {
   font-size: 0.75rem;
   color: #cbd5e1;
   line-height: 1.2;
+}
+
+@media (max-width: 1600px) {
+  .header-status-badge {
+    display: none !important;
+  }
+  .btn-cmd-palette {
+    display: none !important;
+  }
+  .brand-subtitle {
+    display: none !important;
+  }
+  .nav-btn {
+    padding: 0.34rem 0.62rem !important;
+    font-size: 0.76rem !important;
+  }
+  .header-actions {
+    gap: 0.32rem !important;
+  }
+  .btn-location-glow {
+    padding: 0.34rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+  .btn-pipeline-glow {
+    padding: 0.34rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-width: 1250px) {
+  .header-refresh-group {
+    display: none !important;
+  }
+  .brand-title {
+    font-size: 0.95rem !important;
+  }
 }
 
 @media (max-width: 768px) {

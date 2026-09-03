@@ -485,9 +485,24 @@ function showAlert(msg, type = "info") {
   }
 }
 
+let lastToastMsg = "";
+let lastToastTime = 0;
+
 function showToast(msg, type = "info") {
+  const now = Date.now();
+  if (msg === lastToastMsg && now - lastToastTime < 2000) {
+    return; // suppress duplicate toast within 2 seconds
+  }
+  lastToastMsg = msg;
+  lastToastTime = now;
+
   const container = document.getElementById("toast-container");
   if (!container) return;
+
+  // Limit max concurrent toasts to 2 to prevent stacking
+  while (container.children.length >= 2) {
+    container.removeChild(container.firstChild);
+  }
 
   const icons = {
     success: "✓",
@@ -516,7 +531,7 @@ function showToast(msg, type = "info") {
       toast.style.transform = "translateX(50px)";
       setTimeout(() => toast.remove(), 250);
     }
-  }, 4500);
+  }, 3500);
 }
 
 // ----------------------------------------------------------------------------
@@ -2735,45 +2750,56 @@ function renderSynopticUI(data) {
 }
 
 // ----------------------------------------------------------------------------
-// Geolocation (📍 My Location)
+// Geolocation (📍 My Location with Seamless IP Fallback)
 // ----------------------------------------------------------------------------
 function setupMyLocation() {
   const btn = document.getElementById("btn-my-location");
   if (!btn) return;
 
   btn.addEventListener("click", () => {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-icon">⏳</span><span>Locating...</span>';
+    showToast("📍 Detecting local meteorological station...", "info");
+
+    const fallbackToIp = async () => {
+      try {
+        showToast("📍 Resolving location via Network IP...", "info");
+        await fetchSynopticWeather("auto:ip");
+        await fetchAllData();
+        showToast(`✓ Station synchronized to ${currentSynopticCity}!`, "success");
+      } catch (e) {
+        showToast("Could not auto-detect location. Please enter your city in the search box.", "warning");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<span class="btn-icon">📍</span><span>My Location</span>';
+      }
+    };
+
     if (!navigator.geolocation) {
-      showAlert("Geolocation is not supported by your browser.", "error");
+      fallbackToIp();
       return;
     }
-
-    btn.disabled = true;
-    btn.innerHTML = '<span class="btn-icon">⏳</span><span>Acquiring...</span>';
-    showAlert("📍 Acquiring GPS coordinates via HTML5 Geolocation...", "info");
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         try {
           const lat = pos.coords.latitude.toFixed(4);
           const lon = pos.coords.longitude.toFixed(4);
-          showAlert(`📍 GPS coordinates locked: ${lat}, ${lon}. Ingesting local station...`, "info");
-
           await fetchSynopticWeather(`${lat},${lon}`);
           await fetchAllData();
-          showAlert(`✓ Station synchronized to your location: ${currentSynopticCity}!`, "success");
+          showToast(`✓ GPS location synchronized: ${currentSynopticCity}!`, "success");
         } catch (e) {
-          showAlert(`Geolocation error: ${e.message}`, "error");
+          await fallbackToIp();
         } finally {
           btn.disabled = false;
           btn.innerHTML = '<span class="btn-icon">📍</span><span>My Location</span>';
         }
       },
       (err) => {
-        btn.disabled = false;
-        btn.innerHTML = '<span class="btn-icon">📍</span><span>My Location</span>';
-        showAlert("Location access denied or timed out.", "error");
+        // When user denies GPS or browser times out, immediately fall back to auto:ip without alarming errors!
+        fallbackToIp();
       },
-      { timeout: 8000, maximumAge: 60000 }
+      { timeout: 3500, maximumAge: 60000 }
     );
   });
 }
@@ -2861,7 +2887,10 @@ function renderFavorites() {
 
 function getSearchHistory() {
   try {
-    return JSON.parse(localStorage.getItem("skycast_history")) || ["Chennai", "Bangalore", "Dubai"];
+    const raw = localStorage.getItem("skycast_history");
+    if (raw === null) return ["Chennai", "Bangalore", "Dubai"];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
     return [];
   }
@@ -2877,20 +2906,24 @@ function saveSearchHistory(city) {
 }
 
 function clearSearchHistory() {
-  localStorage.removeItem("skycast_history");
+  localStorage.setItem("skycast_history", JSON.stringify([]));
   renderSearchHistory();
-  showAlert("Search history cleared.", "info");
+  showToast("Search history cleared.", "info");
 }
 
 function renderSearchHistory() {
   const container = document.getElementById("history-list");
+  const clearBtn = document.getElementById("btn-clear-history");
   if (!container) return;
 
   const history = getSearchHistory();
-  if (history.length === 0) {
-    container.innerHTML = '<span style="font-size: 0.72rem; color: #64748b;">No recent searches</span>';
+  if (!history || history.length === 0) {
+    container.innerHTML = '<span style="font-size: 0.72rem; color: #64748b; font-style: italic;">No recent searches</span>';
+    if (clearBtn) clearBtn.style.display = "none";
     return;
   }
+
+  if (clearBtn) clearBtn.style.display = "inline-block";
 
   container.innerHTML = history.map((city) => `
     <button class="history-chip" data-city="${city}">
@@ -2911,8 +2944,8 @@ function setupFavoritesAndHistory() {
   renderSearchHistory();
 
   const favBtn = document.getElementById("btn-toggle-favorite");
-  if (favBtn) favBtn.addEventListener("click", toggleCurrentFavorite);
+  if (favBtn) favBtn.onclick = toggleCurrentFavorite;
 
   const clearBtn = document.getElementById("btn-clear-history");
-  if (clearBtn) clearBtn.addEventListener("click", clearSearchHistory);
+  if (clearBtn) clearBtn.onclick = clearSearchHistory;
 }
