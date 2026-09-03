@@ -33,12 +33,14 @@ class GenAIResponse(BaseModel):
     error: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
+    latency_ms: Optional[float] = None
+    cached: bool = False
 
 
 class GenAIConfigUpdate(BaseModel):
     provider: str = Field(..., examples=["gemini", "openai", "groq", "deepseek", "anthropic", "ollama", "rule_based"])
     api_key: Optional[str] = Field(default=None, description="Secret API key for the AI provider")
-    model: Optional[str] = Field(default=None, description="Model identifier (e.g. gemini-1.5-flash, gpt-4o-mini)")
+    model: Optional[str] = Field(default=None, description="Model identifier (e.g. gemini-flash-lite-latest, gpt-4o-mini)")
     base_url: Optional[str] = Field(default=None, description="Custom base URL for Ollama / LocalAI")
 
 
@@ -46,6 +48,19 @@ class GenAIConfigUpdate(BaseModel):
 def get_genai_config():
     """Get active AI provider and list of supported LLM platforms."""
     return genai_assistant.get_config()
+
+
+@router.get("/metrics")
+def get_genai_efficiency_metrics():
+    """Retrieve real-time GenAI efficiency metrics (cache hit rate, avg latency)."""
+    return genai_assistant.get_metrics()
+
+
+@router.post("/clear-cache")
+def clear_genai_cache():
+    """Clear the in-memory GenAI query cache."""
+    genai_assistant.clear_cache()
+    return {"success": True, "message": "GenAI query cache cleared successfully."}
 
 
 @router.post("/config")

@@ -31,6 +31,14 @@ def trigger_pipeline_run(
     """
     try:
         result = pipeline_service.run(db=db, use_sample_data=payload.use_sample_data)
+        
+        # Invalidate GenAI query cache so responses immediately reflect freshly loaded records
+        try:
+            from backend.routes.genai_routes import genai_assistant
+            genai_assistant.clear_cache()
+        except Exception:
+            pass
+
         success = result.get("status") in ("SUCCESS", "PARTIAL")
         message = (
             f"ETL completed with status '{result.get('status')}'. "

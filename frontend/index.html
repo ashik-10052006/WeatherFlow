@@ -655,9 +655,15 @@
                   <input type="text" id="input-ai-model" class="form-control" placeholder="Leave empty for default" style="margin-top: 0.25rem;">
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span id="ai-config-status" style="font-size: 0.8rem; color: var(--text-muted);"></span>
-                <button id="btn-save-ai-config" class="btn btn-primary btn-sm">💾 Save & Activate AI Key</button>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                  <span id="ai-config-status" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+                  <span id="ai-cache-indicator" class="badge" style="font-size: 0.7rem; background: rgba(255, 255, 255, 0.05); color: #94a3b8;">Cache: Active</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button id="btn-clear-ai-cache" class="btn btn-secondary btn-sm" type="button" title="Purge query cache">🧹 Clear Cache</button>
+                  <button id="btn-save-ai-config" class="btn btn-primary btn-sm">💾 Save & Activate AI Key</button>
+                </div>
               </div>
             </div>
           </div>
@@ -668,19 +674,24 @@
               <button id="btn-ask-genai" class="btn btn-primary">Ask Assistant</button>
             </div>
             <div class="prompt-chips">
-              <span>Try asking:</span>
-              <button class="chip-btn" data-prompt="Which city has the highest temperature?">Hottest City?</button>
-              <button class="chip-btn" data-prompt="Which city has the lowest temperature?">Coldest City?</button>
-              <button class="chip-btn" data-prompt="What is the average humidity across all cities?">Average Humidity?</button>
-              <button class="chip-btn" data-prompt="Which cities have rainy or overcast weather?">Rainy/Cloudy Cities?</button>
-              <button class="chip-btn" data-prompt="Show me the windiest cities">Windiest Cities?</button>
+              <span>Fast Queries:</span>
+              <button class="chip-btn" data-prompt="Which city has the highest temperature?">🔥 Warmest City</button>
+              <button class="chip-btn" data-prompt="Which city has the lowest temperature?">❄️ Coldest City</button>
+              <button class="chip-btn" data-prompt="What is the average humidity across all cities?">💧 Humidity Ranking</button>
+              <button class="chip-btn" data-prompt="Which cities have rainy or overcast weather?">🌧️ Active Rain</button>
+              <button class="chip-btn" data-prompt="Show me the windiest cities">💨 Windiest Cities</button>
+              <button class="chip-btn" data-prompt="Show latest ETL pipeline runs status">⚙️ Pipeline Health</button>
             </div>
           </div>
 
           <div id="genai-response-container" class="genai-response-container hidden">
             <div class="genai-result-card">
-              <div class="result-header">
+              <div class="result-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3>💡 AI Insights & Analysis</h3>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                  <span id="genai-speed-pill" class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35); font-weight: 700;">⚡ Instant</span>
+                  <span id="genai-model-pill" class="badge" style="background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">gemini-flash-lite</span>
+                </div>
               </div>
               <div class="explanation-box" id="genai-explanation"></div>
 

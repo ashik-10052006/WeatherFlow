@@ -2182,6 +2182,27 @@ function setupGenAI() {
     });
   }
 
+  // Clear AI Query Cache Button
+  const btnClearCache = document.getElementById("btn-clear-ai-cache");
+  if (btnClearCache) {
+    btnClearCache.addEventListener("click", async () => {
+      try {
+        btnClearCache.disabled = true;
+        btnClearCache.textContent = "Clearing...";
+        const res = await fetch(`${API_BASE}/api/genai/clear-cache`, { method: "POST" });
+        if (res.ok) {
+          showToast("GenAI query cache purged successfully!", "success");
+          loadAiConfig();
+        }
+      } catch (e) {
+        console.error("Failed to clear cache:", e);
+      } finally {
+        btnClearCache.disabled = false;
+        btnClearCache.textContent = "🧹 Clear Cache";
+      }
+    });
+  }
+
   askBtn.addEventListener("click", () => {
     const q = input.value.trim();
     if (q) askGenAIQuestion(q);
@@ -2221,6 +2242,11 @@ async function loadAiConfig() {
       keyInput.placeholder = `Key configured (${cfg.masked_key || 'saved'})`;
     }
 
+    const cacheIndicator = document.getElementById("ai-cache-indicator");
+    if (cacheIndicator && cfg.cache_stats) {
+      cacheIndicator.textContent = `Cache: ${cfg.cache_stats.cached_entries} items (${cfg.cache_stats.hit_rate} hit rate)`;
+    }
+
     updateAiBadges(cfg);
   } catch (e) {
     console.error("loadAiConfig failed:", e);
@@ -2253,7 +2279,7 @@ async function askGenAIQuestion(question) {
   const container = document.getElementById("genai-response-container");
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon">⏳</span> Reasoning...';
+  btn.innerHTML = '<span class="btn-icon">⚡</span> Executing Query...';
 
   try {
     const res = await fetch(`${API_BASE}/api/genai/ask`, {
@@ -2274,6 +2300,28 @@ async function askGenAIQuestion(question) {
     );
     document.getElementById("genai-row-count").textContent = data.row_count;
 
+    // Display latency and cache telemetry
+    const speedPill = document.getElementById("genai-speed-pill");
+    const modelPill = document.getElementById("genai-model-pill");
+    if (speedPill) {
+      if (data.cached) {
+        speedPill.textContent = `⚡ Cached (${data.latency_ms || 0.8}ms)`;
+        speedPill.style.color = "#38bdf8";
+        speedPill.style.background = "rgba(56, 189, 248, 0.15)";
+        speedPill.style.borderColor = "rgba(56, 189, 248, 0.35)";
+      } else {
+        const ms = data.latency_ms || 250;
+        const sec = (ms / 1000).toFixed(2);
+        speedPill.textContent = ms < 1000 ? `⚡ ${ms}ms` : `⚡ ${sec}s`;
+        speedPill.style.color = "#10b981";
+        speedPill.style.background = "rgba(16, 185, 129, 0.15)";
+        speedPill.style.borderColor = "rgba(16, 185, 129, 0.35)";
+      }
+    }
+    if (modelPill) {
+      modelPill.textContent = data.model || data.provider || "Gemini Flash Lite";
+    }
+
     // Build results table
     const thead = document.getElementById("thead-genai");
     const tbody = document.getElementById("tbody-genai");
@@ -2293,6 +2341,7 @@ async function askGenAIQuestion(question) {
     }
 
     container.classList.remove("hidden");
+    loadAiConfig();
   } catch (err) {
     showAlert(`GenAI Error: ${err.message}`, "error");
   } finally {
