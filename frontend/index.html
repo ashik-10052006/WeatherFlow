@@ -318,7 +318,52 @@
               <h2>🤖 GenAI Weather Analytics Assistant</h2>
               <p class="section-desc">Ask questions about weather records in natural language. Generates and executes safe read-only SQL.</p>
             </div>
-            <span class="badge">Safe Read-Only SQL Engine</span>
+            <span class="badge" id="badge-active-ai-provider">Safe Read-Only SQL Engine</span>
+          </div>
+
+          <!-- AI Provider & API Key Configuration Drawer -->
+          <div class="ai-config-box" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" id="toggle-ai-config">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.1rem;">⚙️</span>
+                <span style="font-weight: 600; color: #fff; font-size: 0.92rem;">AI Provider & API Key Settings</span>
+                <span class="badge" id="badge-ai-provider-pill" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: #0284c7;">Built-in Rule Engine</span>
+              </div>
+              <span id="icon-toggle-ai" style="color: var(--text-muted); font-size: 0.85rem;">▼ Configure</span>
+            </div>
+
+            <div id="ai-config-panel" class="hidden" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+              <p style="font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Connect any AI platform (<strong>Google Gemini</strong>, <strong>OpenAI</strong>, <strong>Groq</strong>, <strong>DeepSeek</strong>, <strong>Claude</strong>, or local <strong>Ollama</strong>). 
+                If no API key is configured, the assistant operates using the built-in Safe SQL engine.
+              </p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                  <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">AI PROVIDER</label>
+                  <select id="select-ai-provider" class="form-control" style="margin-top: 0.25rem;">
+                    <option value="rule_based">Built-in Rule Engine (No Key Needed)</option>
+                    <option value="gemini">Google Gemini (gemini-1.5-flash)</option>
+                    <option value="openai">OpenAI (gpt-4o-mini / gpt-4o)</option>
+                    <option value="groq">Groq (llama-3.3-70b-versatile)</option>
+                    <option value="deepseek">DeepSeek (deepseek-chat)</option>
+                    <option value="anthropic">Anthropic Claude (claude-3-5-haiku)</option>
+                    <option value="ollama">Local Ollama / LMStudio</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">API KEY</label>
+                  <input type="password" id="input-ai-key" class="form-control" placeholder="Paste your API key here..." style="margin-top: 0.25rem;">
+                </div>
+                <div>
+                  <label style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">MODEL (OPTIONAL)</label>
+                  <input type="text" id="input-ai-model" class="form-control" placeholder="Leave empty for default" style="margin-top: 0.25rem;">
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span id="ai-config-status" style="font-size: 0.8rem; color: var(--text-muted);"></span>
+                <button id="btn-save-ai-config" class="btn btn-primary btn-sm">💾 Save & Activate AI Key</button>
+              </div>
+            </div>
           </div>
 
           <div class="genai-input-box">

@@ -964,6 +964,61 @@ function setupGenAI() {
   const input = document.getElementById("genai-question-input");
   if (!askBtn || !input) return;
 
+  // Load current AI configuration
+  loadAiConfig();
+
+  // Toggle AI Configuration Drawer
+  const toggleBtn = document.getElementById("toggle-ai-config");
+  const configPanel = document.getElementById("ai-config-panel");
+  const toggleIcon = document.getElementById("icon-toggle-ai");
+  if (toggleBtn && configPanel) {
+    toggleBtn.addEventListener("click", () => {
+      configPanel.classList.toggle("hidden");
+      if (toggleIcon) {
+        toggleIcon.textContent = configPanel.classList.contains("hidden") ? "▼ Configure" : "▲ Close";
+      }
+    });
+  }
+
+  // Save AI Configuration Button
+  const btnSaveAi = document.getElementById("btn-save-ai-config");
+  if (btnSaveAi) {
+    btnSaveAi.addEventListener("click", async () => {
+      const provider = document.getElementById("select-ai-provider").value;
+      const apiKey = document.getElementById("input-ai-key").value.trim();
+      const model = document.getElementById("input-ai-model").value.trim();
+      const statusSpan = document.getElementById("ai-config-status");
+
+      btnSaveAi.disabled = true;
+      btnSaveAi.textContent = "Saving...";
+      statusSpan.textContent = "Updating AI configuration...";
+      statusSpan.style.color = "var(--text-muted)";
+
+      try {
+        const res = await fetch(`${API_BASE}/api/genai/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider, api_key: apiKey || null, model: model || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || "Failed to save configuration");
+
+        statusSpan.textContent = `✓ Active: ${data.config.provider} (${data.config.model})`;
+        statusSpan.style.color = "#34d399";
+        showAlert(`AI Provider updated to ${data.config.provider}`, "success");
+
+        updateAiBadges(data.config);
+        document.getElementById("input-ai-key").value = "";
+      } catch (err) {
+        statusSpan.textContent = `Error: ${err.message}`;
+        statusSpan.style.color = "#f87171";
+      } finally {
+        btnSaveAi.disabled = false;
+        btnSaveAi.textContent = "💾 Save & Activate AI Key";
+      }
+    });
+  }
+
   askBtn.addEventListener("click", () => {
     const q = input.value.trim();
     if (q) askGenAIQuestion(q);
@@ -984,6 +1039,50 @@ function setupGenAI() {
       askGenAIQuestion(promptText);
     });
   });
+}
+
+async function loadAiConfig() {
+  try {
+    const res = await fetch(`${API_BASE}/api/genai/config`);
+    if (!res.ok) return;
+    const cfg = await res.json();
+
+    const select = document.getElementById("select-ai-provider");
+    if (select) select.value = cfg.provider;
+
+    const modelInput = document.getElementById("input-ai-model");
+    if (modelInput && cfg.model) modelInput.placeholder = `Current: ${cfg.model}`;
+
+    const keyInput = document.getElementById("input-ai-key");
+    if (keyInput && cfg.has_api_key) {
+      keyInput.placeholder = `Key configured (${cfg.masked_key || 'saved'})`;
+    }
+
+    updateAiBadges(cfg);
+  } catch (e) {
+    console.error("loadAiConfig failed:", e);
+  }
+}
+
+function updateAiBadges(cfg) {
+  const badgeHeader = document.getElementById("badge-active-ai-provider");
+  const badgePill = document.getElementById("badge-ai-provider-pill");
+
+  const nameMap = {
+    gemini: "Google Gemini AI",
+    openai: "OpenAI ChatGPT",
+    groq: "Groq Fast Llama",
+    deepseek: "DeepSeek AI",
+    anthropic: "Anthropic Claude",
+    ollama: "Local Ollama LLM",
+    rule_based: "Safe Read-Only SQL Engine",
+  };
+
+  const displayName = nameMap[cfg.provider] || cfg.provider;
+  if (badgeHeader) badgeHeader.textContent = `${displayName}`;
+  if (badgePill) {
+    badgePill.textContent = cfg.has_api_key ? `⚡ ${displayName} (Key Active)` : displayName;
+  }
 }
 
 async function askGenAIQuestion(question) {

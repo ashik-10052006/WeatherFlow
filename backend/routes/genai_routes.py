@@ -31,6 +31,36 @@ class GenAIResponse(BaseModel):
     rows: List[Dict[str, Any]] = []
     explanation: str
     error: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+
+
+class GenAIConfigUpdate(BaseModel):
+    provider: str = Field(..., examples=["gemini", "openai", "groq", "deepseek", "anthropic", "ollama", "rule_based"])
+    api_key: Optional[str] = Field(default=None, description="Secret API key for the AI provider")
+    model: Optional[str] = Field(default=None, description="Model identifier (e.g. gemini-1.5-flash, gpt-4o-mini)")
+    base_url: Optional[str] = Field(default=None, description="Custom base URL for Ollama / LocalAI")
+
+
+@router.get("/config")
+def get_genai_config():
+    """Get active AI provider and list of supported LLM platforms."""
+    return genai_assistant.get_config()
+
+
+@router.post("/config")
+def update_genai_config(payload: GenAIConfigUpdate):
+    """
+    Dynamically update or test any AI API key (Gemini, OpenAI, Groq, DeepSeek, Claude, Ollama).
+    Changes take effect immediately in memory.
+    """
+    updated = genai_assistant.update_config(
+        provider=payload.provider,
+        api_key=payload.api_key,
+        model=payload.model,
+        base_url=payload.base_url,
+    )
+    return {"success": True, "message": f"AI provider updated to {payload.provider}", "config": updated}
 
 
 @router.post("/ask", response_model=GenAIResponse)
@@ -41,7 +71,7 @@ def ask_genai_weather_assistant(
     """
     GenAI Natural Language to Safe SQL Assistant.
     1. Parses natural language question
-    2. Generates read-only SQL query
+    2. Generates read-only SQL query (via LLM or Rule-Based fallback)
     3. Validates SQL safety (blocks DDL/DML)
     4. Executes query on SQL Server
     5. Formulates human-readable explanation

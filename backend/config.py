@@ -30,11 +30,22 @@ class Settings(BaseSettings):
     )
     weather_api_timeout_seconds: int = Field(default=10, validation_alias="WEATHER_API_TIMEOUT_SECONDS")
 
+    # AI / LLM Model Configuration
+    ai_provider: str = Field(default="rule_based", validation_alias="AI_PROVIDER")
+    ai_api_key: Optional[str] = Field(default=None, validation_alias="AI_API_KEY")
+    ai_model: Optional[str] = Field(default=None, validation_alias="AI_MODEL")
+    ai_base_url: Optional[str] = Field(default=None, validation_alias="AI_BASE_URL")
+    gemini_api_key: Optional[str] = Field(default=None, validation_alias="GEMINI_API_KEY")
+    openai_api_key: Optional[str] = Field(default=None, validation_alias="OPENAI_API_KEY")
+    groq_api_key: Optional[str] = Field(default=None, validation_alias="GROQ_API_KEY")
+    deepseek_api_key: Optional[str] = Field(default=None, validation_alias="DEEPSEEK_API_KEY")
+    anthropic_api_key: Optional[str] = Field(default=None, validation_alias="ANTHROPIC_API_KEY")
+
     # Application Configuration
     app_env: str = Field(default="development", validation_alias="APP_ENV")
-    log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
     app_host: str = Field(default="127.0.0.1", validation_alias="APP_HOST")
     app_port: int = Field(default=8000, validation_alias="APP_PORT")
+    log_level: str = Field(default="INFO", validation_alias="LOG_LEVEL")
 
     model_config = SettingsConfigDict(
         env_file=".env",
