@@ -3,37 +3,50 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WEATHERDATA — All Links Directory & Portal</title>
+  <title>WEATHERDATA — All Links Directory & Live API Explorer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
   <style>
     .portal-container {
-      max-width: 1200px;
-      margin: 2rem auto;
+      max-width: 1400px;
+      margin: 1.5rem auto 3rem;
       padding: 0 1.5rem;
     }
     .portal-hero {
       text-align: center;
-      margin-bottom: 2.5rem;
+      margin-bottom: 2rem;
       padding: 2.5rem;
-      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
-      border: 1px solid var(--border-color);
+      background: linear-gradient(135deg, rgba(20, 31, 54, 0.9), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: var(--radius-lg);
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .portal-hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #06b6d4, #8b5cf6);
     }
     .portal-title {
       font-size: 2.2rem;
-      font-weight: 700;
+      font-weight: 800;
       color: #ffffff;
       margin-bottom: 0.5rem;
+      letter-spacing: -0.02em;
     }
     .portal-subtitle {
       font-size: 1rem;
       color: var(--text-secondary);
-      max-width: 650px;
+      max-width: 750px;
       margin: 0 auto 1.5rem;
+      line-height: 1.6;
     }
     .hero-badges {
       display: flex;
@@ -43,45 +56,47 @@
     }
     .category-title {
       font-size: 1.25rem;
-      font-weight: 600;
+      font-weight: 700;
       color: var(--accent-cyan);
-      margin: 2rem 0 1rem;
+      margin: 2.5rem 0 1rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
     }
     .links-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
       gap: 1.25rem;
     }
     .link-card {
-      background-color: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      padding: 1.25rem;
+      background: linear-gradient(135deg, #111a2e, #17243c);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      transition: all 0.2s ease;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
       text-decoration: none;
       color: inherit;
+      cursor: pointer;
+      position: relative;
     }
     .link-card:hover {
-      transform: translateY(-3px);
-      border-color: var(--accent-blue);
-      box-shadow: var(--shadow-glow);
+      transform: translateY(-4px);
+      border-color: rgba(56, 189, 248, 0.5);
+      box-shadow: 0 12px 28px -5px rgba(0, 0, 0, 0.4), 0 0 20px rgba(56, 189, 248, 0.15);
     }
     .link-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.65rem;
     }
     .method-badge {
       font-size: 0.75rem;
       font-weight: 700;
-      padding: 0.2rem 0.5rem;
+      padding: 0.25rem 0.6rem;
       border-radius: var(--radius-sm);
       font-family: var(--font-mono);
     }
@@ -105,21 +120,260 @@
       font-size: 0.95rem;
       font-weight: 600;
       color: #ffffff;
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.4rem;
     }
     .link-desc {
       font-size: 0.85rem;
       color: var(--text-secondary);
-      line-height: 1.4;
-      margin-bottom: 1rem;
+      line-height: 1.5;
+      margin-bottom: 1.25rem;
+    }
+    .link-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding-top: 0.75rem;
+      margin-top: auto;
     }
     .link-action {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       font-weight: 600;
       color: var(--accent-cyan);
       display: flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.35rem;
+    }
+    .open-raw-btn {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+    .open-raw-btn:hover {
+      color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.08);
+    }
+
+    /* ==========================================================================
+       Live Interactive API UI Inspector Modal
+       ========================================================================== */
+    .api-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(5, 8, 17, 0.82);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1.5rem;
+      animation: fadeIn 0.2s ease-out;
+    }
+    .api-modal-overlay.hidden {
+      display: none !important;
+    }
+    .api-modal {
+      background: linear-gradient(135deg, #101728, #162035);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 1050px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(56, 189, 248, 0.15);
+      overflow: hidden;
+      animation: modalSlide 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes modalSlide {
+      from { transform: translateY(20px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .api-modal-header {
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      background-color: rgba(15, 23, 42, 0.6);
+    }
+    .api-modal-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .api-modal-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .api-modal-url {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+      background-color: rgba(6, 182, 212, 0.1);
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+    }
+    .api-modal-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .status-pill {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+    }
+    .status-pill.success {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid #059669;
+    }
+    .status-pill.error {
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid #b91c1c;
+    }
+    .latency-pill {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.25rem;
+      transition: color 0.2s;
+    }
+    .modal-close-btn:hover {
+      color: #ffffff;
+    }
+
+    /* Modal Tabs */
+    .api-modal-tabs {
+      display: flex;
+      padding: 0.5rem 1.75rem 0;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background-color: rgba(15, 23, 42, 0.4);
+    }
+    .modal-tab-btn {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      padding: 0.6rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .modal-tab-btn.active {
+      color: #ffffff;
+      border-bottom-color: var(--accent-blue);
+    }
+    .modal-tab-btn:hover:not(.active) {
+      color: #ffffff;
+    }
+
+    /* Modal Body */
+    .api-modal-body {
+      padding: 1.5rem 1.75rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .view-content {
+      display: none;
+    }
+    .view-content.active {
+      display: block;
+    }
+
+    /* Structured UI Table in Modal */
+    .modal-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+    .modal-data-table th {
+      padding: 0.75rem 1rem;
+      background-color: rgba(15, 23, 42, 0.8);
+      color: var(--text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+    }
+    .modal-data-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+    .modal-data-table tr:hover td {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    /* KPI Grid in Modal (for summary objects) */
+    .modal-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .modal-kpi-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+    .modal-kpi-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .modal-kpi-value {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 0.25rem;
+    }
+
+    /* JSON Viewer */
+    .json-code-box {
+      background-color: #080c16;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      max-height: 50vh;
+      white-space: pre;
+    }
+
+    /* Modal Footer */
+    .api-modal-footer {
+      padding: 1rem 1.75rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background-color: rgba(15, 23, 42, 0.6);
     }
   </style>
 </head>
@@ -134,6 +388,9 @@
         </div>
       </div>
       <div class="header-actions">
+        <div class="header-status-badge">
+          <span class="pulse-dot"></span> SQL Server Live
+        </div>
         <a href="/" class="btn btn-primary">Open Main Dashboard</a>
         <a href="/docs" class="btn btn-secondary">Open Swagger Docs</a>
       </div>
@@ -143,28 +400,32 @@
       <div class="portal-hero">
         <div class="portal-title">🌐 Platform URL & API Directory</div>
         <p class="portal-subtitle">
-          Centralized directory providing direct access to every dashboard interface, REST endpoint, telemetry log, and documentation resource in the WeatherData platform.
+          Click any endpoint card below to open its <strong>Live Interactive UI Viewer</strong> with real-time formatted data, structured tables, KPI cards, and JSON inspector.
         </p>
         <div class="hero-badges">
           <span class="badge">Active Provider: WeatherAPI.com & Open-Meteo</span>
           <span class="badge">Database: SQL Server (WeatherDataWarehouse)</span>
           <span class="badge">Port: 8000</span>
+          <span class="badge" style="background-color: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: #0284c7;">⚡ Click Any Link for Live UI View</span>
         </div>
       </div>
 
       <!-- 1. Web Applications & Interactive Portals -->
-      <div class="category-title">🖥️ User Interfaces & Documentation</div>
+      <div class="category-title">🖥️ User Interfaces & Full Applications</div>
       <div class="links-grid">
-        <a href="/" class="link-card">
+        <a href="/" class="link-card" target="_blank">
           <div>
             <div class="link-top">
               <span class="method-badge method-ui">WEB UI</span>
-              <span class="badge">Dashboard</span>
+              <span class="badge">Main Dashboard</span>
             </div>
             <div class="link-path">/</div>
-            <div class="link-desc">Complete interactive single-page dashboard with real-time KPI cards, Chart.js trends, observation history, pipeline controls, and GenAI assistant.</div>
+            <div class="link-desc">Complete production single-page dashboard with dynamic worldwide city search, KPI metrics, ranked comparison bar charts, 7-day trendlines, and GenAI assistant.</div>
           </div>
-          <div class="link-action">Launch Dashboard &rarr;</div>
+          <div class="link-footer">
+            <div class="link-action">Launch Full Dashboard &rarr;</div>
+            <span class="open-raw-btn">Web Page</span>
+          </div>
         </a>
 
         <a href="/docs" target="_blank" class="link-card">
@@ -174,9 +435,12 @@
               <span class="badge">Swagger UI</span>
             </div>
             <div class="link-path">/docs</div>
-            <div class="link-desc">Interactive OpenAPI Swagger UI allowing manual testing, payload inspection, and live execution of all REST API routes.</div>
+            <div class="link-desc">Interactive OpenAPI Swagger documentation allowing manual endpoint testing, payload inspection, and live curl requests.</div>
           </div>
-          <div class="link-action">Open Swagger &rarr;</div>
+          <div class="link-footer">
+            <div class="link-action">Open Swagger Docs &rarr;</div>
+            <span class="open-raw-btn">Interactive UI</span>
+          </div>
         </a>
 
         <a href="/redoc" target="_blank" class="link-card">
@@ -186,165 +450,253 @@
               <span class="badge">ReDoc</span>
             </div>
             <div class="link-path">/redoc</div>
-            <div class="link-desc">Clean, responsive ReDoc technical API documentation and schema specifications.</div>
+            <div class="link-desc">Clean, responsive ReDoc technical API documentation and OpenAPI 3.1 schema specifications.</div>
           </div>
-          <div class="link-action">Open ReDoc &rarr;</div>
+          <div class="link-footer">
+            <div class="link-action">Open ReDoc &rarr;</div>
+            <span class="open-raw-btn">Interactive UI</span>
+          </div>
         </a>
 
-        <a href="/health" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/health" data-title="System Health & Database Liveness" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
               <span class="badge">Health</span>
             </div>
             <div class="link-path">/health</div>
-            <div class="link-desc">Liveness and readiness health check returning SQL Server connectivity, database name, and service status.</div>
+            <div class="link-desc">Liveness & readiness health check returning SQL Server connectivity, database name, and service latency.</div>
           </div>
-          <div class="link-action">Inspect Health &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/health" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
       </div>
 
       <!-- 2. Weather Data Endpoints -->
       <div class="category-title">⛅ Weather Observation APIs</div>
       <div class="links-grid">
-        <a href="/api/weather/latest" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/weather/latest" data-title="Latest Weather Observations Across All Stations" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
-              <span class="badge">Live</span>
+              <span class="badge">Latest Obs</span>
             </div>
             <div class="link-path">/api/weather/latest</div>
             <div class="link-desc">Returns the most recent meteorological observation for every monitored city using SQL Server window functions.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/weather/latest" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
 
-        <a href="/api/weather/history" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/weather/history?limit=50" data-title="Warehouse Historical Weather Records" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
               <span class="badge">History</span>
             </div>
             <div class="link-path">/api/weather/history</div>
-            <div class="link-desc">Returns time-series historical observations across all stations with support for limit and date filters.</div>
+            <div class="link-desc">Returns time-series historical weather observations across all stations with support for limit and city filters.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/weather/history" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
 
-        <a href="/api/weather/history/Bangalore" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/weather/history/Bangalore?limit=25" data-title="Bangalore Weather History" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
               <span class="badge">City Filter</span>
             </div>
             <div class="link-path">/api/weather/history/Bangalore</div>
-            <div class="link-desc">Returns historical observations specifically filtered for Bangalore (or any city passed in the path).</div>
+            <div class="link-desc">Returns historical observations specifically filtered for Bangalore station.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/weather/history/Bangalore" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
 
-        <a href="/api/locations" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/locations" data-title="Monitored Station Coordinates & Metadata" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
-              <span class="badge">Dimension</span>
+              <span class="badge">Locations</span>
             </div>
             <div class="link-path">/api/locations</div>
-            <div class="link-desc">Lists all monitored geographic stations with latitude, longitude, and country metadata.</div>
+            <div class="link-desc">Lists all monitored geographic stations with latitude, longitude, and country metadata in SQL Server.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/locations" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
       </div>
 
       <!-- 3. Analytics & Trend Endpoints -->
       <div class="category-title">📊 Analytics & Warehouse Metrics</div>
       <div class="links-grid">
-        <a href="/api/analytics/summary" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/analytics/summary" data-title="Warehouse Analytics KPI Summary" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
               <span class="badge">KPIs</span>
             </div>
             <div class="link-path">/api/analytics/summary</div>
-            <div class="link-desc">Warehouse aggregate metrics: total observations, monitored cities, average/max/min temperatures, and mean humidity.</div>
+            <div class="link-desc">Warehouse aggregate metrics: total observations, min/max/average temperatures, and mean humidity.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/analytics/summary" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
 
-        <a href="/api/analytics/temperature-trend" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/analytics/temperature-trend?days=7" data-title="7-Day Temperature Trend Aggregates" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
-              <span class="badge">Charts</span>
+              <span class="badge">7-Day Temp</span>
             </div>
             <div class="link-path">/api/analytics/temperature-trend</div>
-            <div class="link-desc">Daily temperature aggregates (mean, max, min) grouped by observation date and city over the past 7–90 days.</div>
+            <div class="link-desc">Daily temperature aggregates (mean, max, min) grouped by observation date and city over the past 7 days.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/analytics/temperature-trend?days=7" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
 
-        <a href="/api/analytics/humidity-trend" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/analytics/humidity-trend?days=7" data-title="7-Day Relative Humidity Trend Aggregates" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
-              <span class="badge">Charts</span>
+              <span class="badge">7-Day Humidity</span>
             </div>
             <div class="link-path">/api/analytics/humidity-trend</div>
-            <div class="link-desc">Daily relative humidity aggregates grouped by observation date and city.</div>
+            <div class="link-desc">Daily relative humidity aggregates grouped by observation date and station over the past 7 days.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/analytics/humidity-trend?days=7" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
       </div>
 
-      <!-- 4. Pipeline Telemetry & GenAI -->
-      <div class="category-title">🚀 Pipeline Telemetry & GenAI Module</div>
+      <!-- 4. Pipeline Telemetry & Execution -->
+      <div class="category-title">🚀 Pipeline Telemetry & ETL Controls</div>
       <div class="links-grid">
-        <a href="/api/pipeline/runs" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/pipeline/runs?limit=20" data-title="ETL Pipeline Runs Telemetry" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
               <span class="badge">Telemetry</span>
             </div>
             <div class="link-path">/api/pipeline/runs</div>
-            <div class="link-desc">Audit logs for every ETL run with extraction counts, loaded counts, duration, and status (SUCCESS / FAILED).</div>
+            <div class="link-desc">Historical execution audit logs for every ETL run with extraction counts, loaded counts, duration, and status.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/pipeline/runs" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
+          </div>
+        </div>
 
-        <a href="/api/pipeline/runs/1" target="_blank" class="link-card">
+        <div class="link-card js-api-link" data-url="/api/pipeline/runs/1" data-title="Detailed Pipeline Run #1 Audit" data-method="GET">
           <div>
             <div class="link-top">
               <span class="method-badge method-get">GET</span>
-              <span class="badge">Quality Logs</span>
+              <span class="badge">Audit Logs</span>
             </div>
             <div class="link-path">/api/pipeline/runs/1</div>
-            <div class="link-desc">Detailed telemetry and data quality anomaly logs for pipeline execution #1.</div>
+            <div class="link-desc">Detailed telemetry and data quality anomaly audit logs for pipeline execution #1.</div>
           </div>
-          <div class="link-action">View JSON &rarr;</div>
-        </a>
-
-        <div class="link-card">
-          <div>
-            <div class="link-top">
-              <span class="method-badge method-post">POST</span>
-              <span class="badge">ETL Action</span>
-            </div>
-            <div class="link-path">/api/pipeline/run</div>
-            <div class="link-desc">Triggers the end-to-end ETL pipeline (Extract &rarr; Transform &rarr; Validate &rarr; Load &rarr; Log) with optional sample data flag.</div>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Live UI Viewer &rarr;</div>
+            <a href="/api/pipeline/runs/1" target="_blank" class="open-raw-btn" onclick="event.stopPropagation()">Raw JSON ↗</a>
           </div>
-          <div class="link-action">Triggerable via Dashboard or /docs</div>
         </div>
 
-        <div class="link-card">
+        <div class="link-card js-post-pipeline" data-url="/api/pipeline/run" data-title="Trigger ETL Pipeline (POST)">
           <div>
             <div class="link-top">
               <span class="method-badge method-post">POST</span>
-              <span class="badge">AI Assistant</span>
+              <span class="badge">Execute ETL</span>
+            </div>
+            <div class="link-path">/api/pipeline/run</div>
+            <div class="link-desc">Triggers end-to-end extraction from live Weather API, data validation, and incremental ingestion into SQL Server.</div>
+          </div>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Interactive Runner &rarr;</div>
+            <span class="open-raw-btn">POST Action</span>
+          </div>
+        </div>
+
+        <div class="link-card js-post-genai" data-url="/api/genai/ask" data-title="GenAI Weather Assistant (POST)">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-post">POST</span>
+              <span class="badge">AI Query</span>
             </div>
             <div class="link-path">/api/genai/ask</div>
-            <div class="link-desc">Safe Text-to-SQL Assistant: converts natural language questions into validated read-only SQL and returns natural language explanations.</div>
+            <div class="link-desc">Safe Text-to-SQL Assistant: converts questions into validated read-only SQL and generates natural language explanations.</div>
           </div>
-          <div class="link-action">Interactive on Dashboard or /docs</div>
+          <div class="link-footer">
+            <div class="link-action">▶ Open Interactive Console &rarr;</div>
+            <span class="open-raw-btn">POST Action</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live Interactive API Inspector Modal -->
+    <div id="api-modal-overlay" class="api-modal-overlay hidden">
+      <div class="api-modal">
+        <div class="api-modal-header">
+          <div class="api-modal-title-group">
+            <span id="modal-method-badge" class="method-badge method-get">GET</span>
+            <span id="modal-title" class="api-modal-title">Live API Viewer</span>
+            <span id="modal-url" class="api-modal-url">/api/...</span>
+          </div>
+          <div class="api-modal-meta">
+            <span id="modal-status-pill" class="status-pill success">200 OK</span>
+            <span id="modal-latency-pill" class="latency-pill">-- ms</span>
+            <button id="modal-close-btn" class="modal-close-btn" title="Close">&times;</button>
+          </div>
+        </div>
+
+        <div class="api-modal-tabs">
+          <button class="modal-tab-btn active" data-tab="tab-ui">🖥️ Formatted UI View</button>
+          <button class="modal-tab-btn" data-tab="tab-json">{ } Raw JSON Inspector</button>
+        </div>
+
+        <div class="api-modal-body">
+          <!-- Tab 1: Formatted UI View -->
+          <div id="tab-ui" class="view-content active">
+            <div id="ui-view-container">
+              <!-- Rendered dynamically (Tables, KPI cards, or forms) -->
+            </div>
+          </div>
+
+          <!-- Tab 2: Raw JSON Inspector -->
+          <div id="tab-json" class="view-content">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+              <button id="btn-copy-json" class="btn btn-secondary btn-sm">📋 Copy JSON</button>
+            </div>
+            <pre id="json-code-box" class="json-code-box"></pre>
+          </div>
+        </div>
+
+        <div class="api-modal-footer">
+          <div>
+            <button id="btn-rerun-request" class="btn btn-primary btn-sm">🔄 Re-run Request</button>
+          </div>
+          <div>
+            <a id="modal-raw-link" href="#" target="_blank" class="btn btn-secondary btn-sm">↗ Open Raw Endpoint</a>
+          </div>
         </div>
       </div>
     </div>
@@ -354,5 +706,452 @@
       <div>Designed for Junior Data Engineer — GenAI Assessment</div>
     </footer>
   </div>
+
+  <script>
+    let currentModalUrl = '';
+    let currentModalData = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Attach click listeners to GET cards
+      document.querySelectorAll('.js-api-link').forEach(card => {
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          const url = card.getAttribute('data-url');
+          const title = card.getAttribute('data-title') || url;
+          const method = card.getAttribute('data-method') || 'GET';
+          openApiViewer(url, title, method);
+        });
+      });
+
+      // Attach click listener to Pipeline POST card
+      const postPipeline = document.querySelector('.js-post-pipeline');
+      if (postPipeline) {
+        postPipeline.addEventListener('click', () => {
+          openPipelineRunner();
+        });
+      }
+
+      // Attach click listener to GenAI POST card
+      const postGenAI = document.querySelector('.js-post-genai');
+      if (postGenAI) {
+        postGenAI.addEventListener('click', () => {
+          openGenAIConsole();
+        });
+      }
+
+      // Modal Tabs
+      document.querySelectorAll('.modal-tab-btn').forEach(tabBtn => {
+        tabBtn.addEventListener('click', () => {
+          document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll('.view-content').forEach(c => c.classList.remove('active'));
+          tabBtn.classList.add('active');
+          const target = tabBtn.getAttribute('data-tab');
+          document.getElementById(target).classList.add('active');
+        });
+      });
+
+      // Modal Close Listeners
+      document.getElementById('modal-close-btn').addEventListener('click', closeApiViewer);
+      document.getElementById('api-modal-overlay').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('api-modal-overlay')) {
+          closeApiViewer();
+        }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeApiViewer();
+      });
+
+      // Re-run Button
+      document.getElementById('btn-rerun-request').addEventListener('click', () => {
+        if (currentModalUrl) {
+          fetchAndDisplay(currentModalUrl, 'GET');
+        }
+      });
+
+      // Copy JSON Button
+      document.getElementById('btn-copy-json').addEventListener('click', () => {
+        if (currentModalData) {
+          navigator.clipboard.writeText(JSON.stringify(currentModalData, null, 2)).then(() => {
+            const btn = document.getElementById('btn-copy-json');
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => { btn.textContent = '📋 Copy JSON'; }, 2000);
+          });
+        }
+      });
+    });
+
+    async function openApiViewer(url, title, method = 'GET') {
+      currentModalUrl = url;
+      document.getElementById('modal-title').textContent = title;
+      document.getElementById('modal-url').textContent = url;
+      document.getElementById('modal-method-badge').textContent = method;
+      document.getElementById('modal-raw-link').href = url;
+      document.getElementById('modal-raw-link').style.display = 'inline-flex';
+      document.getElementById('btn-rerun-request').style.display = 'inline-flex';
+
+      // Switch to UI Tab by default
+      document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-tab="tab-ui"]').classList.add('active');
+      document.getElementById('tab-ui').classList.add('active');
+
+      document.getElementById('ui-view-container').innerHTML = `
+        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+          <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+          <div>Querying live endpoint ${url}...</div>
+        </div>
+      `;
+
+      document.getElementById('api-modal-overlay').classList.remove('hidden');
+
+      await fetchAndDisplay(url, method);
+    }
+
+    async function fetchAndDisplay(url, method = 'GET') {
+      const startTime = performance.now();
+      const statusPill = document.getElementById('modal-status-pill');
+      const latencyPill = document.getElementById('modal-latency-pill');
+
+      try {
+        const res = await fetch(url);
+        const latency = Math.round(performance.now() - startTime);
+        latencyPill.textContent = `${latency} ms`;
+
+        statusPill.textContent = `${res.status} ${res.statusText || 'OK'}`;
+        statusPill.className = res.ok ? 'status-pill success' : 'status-pill error';
+
+        const data = await res.json();
+        currentModalData = data;
+
+        // Render Raw JSON
+        document.getElementById('json-code-box').textContent = JSON.stringify(data, null, 2);
+
+        // Render Interactive UI View
+        renderStructuredUiView(data, url);
+      } catch (err) {
+        statusPill.textContent = 'Request Failed';
+        statusPill.className = 'status-pill error';
+        document.getElementById('ui-view-container').innerHTML = `
+          <div style="padding: 2rem; background: rgba(239, 68, 68, 0.1); border: 1px solid #b91c1c; border-radius: 8px; color: #f87171;">
+            <strong>Request Error:</strong> ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderStructuredUiView(data, url) {
+      const container = document.getElementById('ui-view-container');
+
+      // Case 1: Array of objects (e.g. weather records, locations, pipeline runs)
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          container.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-muted);">Zero records returned from query.</div>';
+          return;
+        }
+
+        const cols = Object.keys(data[0]);
+        let tableHtml = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-weight: 600; color: #ffffff;">Returned ${data.length} Records</div>
+            <input type="text" id="modal-table-filter" placeholder="🔎 Filter table rows..." style="padding: 0.4rem 0.8rem; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 0.82rem;">
+          </div>
+          <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
+            <table class="modal-data-table" id="modal-table-content">
+              <thead>
+                <tr>${cols.map(c => `<th>${c.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}</tr>
+              </thead>
+              <tbody>
+                ${data.map(row => `
+                  <tr>
+                    ${cols.map(col => {
+                      const val = row[col];
+                      if (val === null || val === undefined) return '<td style="color: var(--text-muted);">--</td>';
+                      if (col === 'temperature_c') return `<td><strong>${val}°C</strong></td>`;
+                      if (col === 'humidity_percent') return `<td>${val}%</td>`;
+                      if (col === 'wind_speed_kmh') return `<td>${val} km/h</td>`;
+                      if (col === 'status') return `<td><span class="badge-status ${String(val).toLowerCase()}">${val}</span></td>`;
+                      return `<td>${val}</td>`;
+                    }).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        container.innerHTML = tableHtml;
+
+        // Instant filter on modal table
+        const filterInput = document.getElementById('modal-table-filter');
+        if (filterInput) {
+          filterInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#modal-table-content tbody tr');
+            rows.forEach(r => {
+              r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+            });
+          });
+        }
+        return;
+      }
+
+      // Case 2: Analytics Summary KPI object
+      if (url.includes('summary') && typeof data === 'object') {
+        container.innerHTML = `
+          <div class="modal-kpi-grid">
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Total Observations</div>
+              <div class="modal-kpi-value">${data.total_records || 0}</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Monitored Locations</div>
+              <div class="modal-kpi-value">${data.total_locations || 0}</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Average Temperature</div>
+              <div class="modal-kpi-value">${data.avg_temperature_c !== null ? data.avg_temperature_c + '°C' : '--'}</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Temperature Range</div>
+              <div class="modal-kpi-value" style="font-size: 1.3rem;">${data.min_temperature_c}°C to ${data.max_temperature_c}°C</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Average Humidity</div>
+              <div class="modal-kpi-value">${data.avg_humidity_percent !== null ? data.avg_humidity_percent + '%' : '--'}</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Case 3: Health check object
+      if (url.includes('health') && typeof data === 'object') {
+        const db = data.database || {};
+        container.innerHTML = `
+          <div class="modal-kpi-grid">
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Platform Status</div>
+              <div class="modal-kpi-value" style="color: #34d399; font-size: 1.5rem;">✓ ${data.status.toUpperCase()}</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Database Connection</div>
+              <div class="modal-kpi-value" style="color: #38bdf8; font-size: 1.5rem;">${db.connected ? 'Connected' : 'Disconnected'}</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">Database Name</div>
+              <div class="modal-kpi-value" style="font-size: 1.1rem; color: #ffffff;">${db.database_name || 'WeatherDataWarehouse'}</div>
+            </div>
+            <div class="modal-kpi-card">
+              <div class="modal-kpi-label">DB Latency</div>
+              <div class="modal-kpi-value" style="font-size: 1.3rem;">${db.latency_ms ? db.latency_ms + ' ms' : '< 1 ms'}</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      // Case 4: General Single Object
+      const entries = Object.entries(data);
+      container.innerHTML = `
+        <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
+          <table class="modal-data-table">
+            <thead>
+              <tr><th>KEY</th><th>VALUE</th></tr>
+            </thead>
+            <tbody>
+              ${entries.map(([k, v]) => `
+                <tr>
+                  <td><strong>${k}</strong></td>
+                  <td>${typeof v === 'object' ? JSON.stringify(v) : v}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function openPipelineRunner() {
+      currentModalUrl = '/api/pipeline/run';
+      document.getElementById('modal-title').textContent = 'Trigger ETL Ingestion Pipeline';
+      document.getElementById('modal-url').textContent = '/api/pipeline/run';
+      document.getElementById('modal-method-badge').textContent = 'POST';
+      document.getElementById('modal-method-badge').className = 'method-badge method-post';
+      document.getElementById('modal-status-pill').textContent = 'Ready to Run';
+      document.getElementById('modal-status-pill').className = 'status-pill';
+      document.getElementById('modal-latency-pill').textContent = '';
+      document.getElementById('modal-raw-link').style.display = 'none';
+      document.getElementById('btn-rerun-request').style.display = 'none';
+
+      document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-tab="tab-ui"]').classList.add('active');
+      document.getElementById('tab-ui').classList.add('active');
+
+      document.getElementById('ui-view-container').innerHTML = `
+        <div style="padding: 1.5rem; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+          <h3 style="margin-bottom: 0.5rem; color: #ffffff;">⚡ Execute Data Pipeline</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+            Extracts real-time meteorological observations from WeatherAPI.com (or Open-Meteo), validates bounds, skips duplicate timestamps, and updates SQL Server.
+          </p>
+          <div style="margin-bottom: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.9rem; cursor: pointer;">
+              <input type="checkbox" id="modal-chk-sample"> Use Offline Mock Sample Data (for testing when disconnected)
+            </label>
+          </div>
+          <button id="modal-btn-exec-pipeline" class="btn btn-primary">
+            ▶ Run ETL Pipeline Now
+          </button>
+          <div id="modal-pipeline-result" style="margin-top: 1.5rem;"></div>
+        </div>
+      `;
+
+      document.getElementById('api-modal-overlay').classList.remove('hidden');
+
+      document.getElementById('modal-btn-exec-pipeline').addEventListener('click', async () => {
+        const btn = document.getElementById('modal-btn-exec-pipeline');
+        const resBox = document.getElementById('modal-pipeline-result');
+        const useSample = document.getElementById('modal-chk-sample').checked;
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Executing Pipeline...';
+        resBox.innerHTML = '<div style="color: var(--text-muted);">Extracting, transforming & ingesting...</div>';
+
+        const startTime = performance.now();
+        try {
+          const res = await fetch('/api/pipeline/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ use_sample_data: useSample })
+          });
+          const latency = Math.round(performance.now() - startTime);
+          document.getElementById('modal-latency-pill').textContent = `${latency} ms`;
+          document.getElementById('modal-status-pill').textContent = `${res.status} ${res.statusText}`;
+          document.getElementById('modal-status-pill').className = res.ok ? 'status-pill success' : 'status-pill error';
+
+          const data = await res.json();
+          currentModalData = data;
+          document.getElementById('json-code-box').textContent = JSON.stringify(data, null, 2);
+
+          resBox.innerHTML = `
+            <div style="padding: 1rem; background: rgba(16, 185, 129, 0.15); border: 1px solid #059669; border-radius: 6px; color: #34d399;">
+              <strong>✓ Pipeline Finished:</strong> Extracted ${data.records_extracted} | Loaded ${data.records_loaded} | Duplicates Skipped: ${data.duplicates_skipped}
+            </div>
+          `;
+        } catch (e) {
+          resBox.innerHTML = `<div style="color: #f87171;">Pipeline Failed: ${e.message}</div>`;
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '▶ Run ETL Pipeline Now';
+        }
+      });
+    }
+
+    function openGenAIConsole() {
+      currentModalUrl = '/api/genai/ask';
+      document.getElementById('modal-title').textContent = 'GenAI Weather Assistant Console';
+      document.getElementById('modal-url').textContent = '/api/genai/ask';
+      document.getElementById('modal-method-badge').textContent = 'POST';
+      document.getElementById('modal-method-badge').className = 'method-badge method-post';
+      document.getElementById('modal-status-pill').textContent = 'Interactive';
+      document.getElementById('modal-status-pill').className = 'status-pill';
+      document.getElementById('modal-latency-pill').textContent = '';
+      document.getElementById('modal-raw-link').style.display = 'none';
+      document.getElementById('btn-rerun-request').style.display = 'none';
+
+      document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.view-content').forEach(c => c.classList.remove('active'));
+      document.querySelector('[data-tab="tab-ui"]').classList.add('active');
+      document.getElementById('tab-ui').classList.add('active');
+
+      document.getElementById('ui-view-container').innerHTML = `
+        <div style="padding: 1.5rem; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+          <h3 style="margin-bottom: 0.5rem; color: #ffffff;">🤖 Ask Natural Language Question</h3>
+          <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem;">
+            Generates safe read-only SQL queries against SQL Server and returns executive natural language insights.
+          </p>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" id="modal-genai-input" class="form-control" placeholder="e.g. Which city recorded the highest temperature?" style="flex: 1; padding: 0.65rem 1rem; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff;">
+            <button id="modal-btn-ask-genai" class="btn btn-primary">Ask AI</button>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Try:</span>
+            <button class="chip-btn modal-chip" data-q="Which city has the highest temperature?">Hottest City?</button>
+            <button class="chip-btn modal-chip" data-q="Which city has the lowest temperature?">Coldest City?</button>
+            <button class="chip-btn modal-chip" data-q="What is the average humidity across all cities?">Avg Humidity?</button>
+          </div>
+          <div id="modal-genai-result"></div>
+        </div>
+      `;
+
+      document.getElementById('api-modal-overlay').classList.remove('hidden');
+
+      document.querySelectorAll('.modal-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.getElementById('modal-genai-input').value = chip.getAttribute('data-q');
+          executeModalGenAI();
+        });
+      });
+
+      document.getElementById('modal-btn-ask-genai').addEventListener('click', executeModalGenAI);
+      document.getElementById('modal-genai-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') executeModalGenAI();
+      });
+    }
+
+    async function executeModalGenAI() {
+      const input = document.getElementById('modal-genai-input');
+      const q = input.value.trim();
+      if (!q) return;
+
+      const btn = document.getElementById('modal-btn-ask-genai');
+      const resBox = document.getElementById('modal-genai-result');
+
+      btn.disabled = true;
+      btn.textContent = 'Thinking...';
+      resBox.innerHTML = '<div style="color: var(--text-muted);">Generating safe SQL query & analyzing database records...</div>';
+
+      const startTime = performance.now();
+      try {
+        const res = await fetch('/api/genai/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q })
+        });
+        const latency = Math.round(performance.now() - startTime);
+        document.getElementById('modal-latency-pill').textContent = `${latency} ms`;
+        document.getElementById('modal-status-pill').textContent = `${res.status} OK`;
+        document.getElementById('modal-status-pill').className = res.ok ? 'status-pill success' : 'status-pill error';
+
+        const data = await res.json();
+        currentModalData = data;
+        document.getElementById('json-code-box').textContent = JSON.stringify(data, null, 2);
+
+        resBox.innerHTML = `
+          <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.1)); border-left: 4px solid #8b5cf6; padding: 1rem 1.25rem; border-radius: 6px; color: #f1f5f9; margin-bottom: 1rem;">
+            <div style="font-weight: 700; color: #c084fc; margin-bottom: 0.25rem;">✨ Assistant Insight:</div>
+            <div>${data.explanation.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>
+          </div>
+          ${data.rows && data.rows.length > 0 ? `
+            <div style="font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem;">Matching Observations (${data.row_count} rows):</div>
+            <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px;">
+              <table class="modal-data-table">
+                <thead><tr>${Object.keys(data.rows[0]).map(c => `<th>${c}</th>`).join('')}</tr></thead>
+                <tbody>${data.rows.map(r => `<tr>${Object.values(r).map(v => `<td>${v !== null ? v : '--'}</td>`).join('')}</tr>`).join('')}</tbody>
+              </table>
+            </div>
+          ` : ''}
+        `;
+      } catch (err) {
+        resBox.innerHTML = `<div style="color: #f87171;">GenAI Query Failed: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Ask AI';
+      }
+    }
+
+    function closeApiViewer() {
+      document.getElementById('api-modal-overlay').classList.add('hidden');
+    }
+  </script>
 </body>
 </html>
