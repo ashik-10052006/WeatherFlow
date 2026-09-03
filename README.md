@@ -377,6 +377,7 @@ http://127.0.0.1:8000/
 2. **Weather History**: Paginated, filterable observation history with city selection.
 3. **Analytics**: Statistical breakdowns (overall max, min, mean) and records distribution chart.
 4. **Pipeline Monitor**: Live telemetry table tracking every ETL run with data quality audit details.
+5. **GenAI Assistant**: Interactive Natural Language to Safe SQL interface with sample prompt chips, generated SQL preview, and human-readable explanation.
 
 ---
 
@@ -420,6 +421,7 @@ To schedule periodic collection every hour, create a Windows Scheduled Task targ
 | `POST` | `/api/pipeline/run` | Manually trigger ETL run | `{"use_sample_data": bool}` |
 | `GET` | `/api/pipeline/runs` | Execution history telemetry | `limit` (default 20) |
 | `GET` | `/api/pipeline/runs/{run_id}` | Details and quality logs for a run | None |
+| `POST` | `/api/genai/ask` | Natural language to Safe SQL analytics assistant | `{"question": str}` |
 
 ---
 
@@ -478,9 +480,9 @@ ORDER BY observation_date DESC, l.city_name;
 
 ## 17. Future Enhancements
 
-- **Phase 8: GenAI Natural Language Query Assistant**: Safe Text-to-SQL module converting natural language prompts into read-only SQL queries.
-- **Airflow Orchestration**: Migrate from in-app trigger to an Apache Airflow DAG for enterprise pipeline scheduling.
-- **Delta Lake / Parquet Storage**: Add cold-path data lake storage export for historical analytics.
+- **Airflow Orchestration**: Migrate from in-app trigger to a distributed Apache Airflow DAG for enterprise pipeline scheduling with SLA alerts.
+- **Delta Lake / Parquet Storage**: Add a cold-path data lake storage export for historical analytics and Databricks integration.
+- **Vector Search RAG Integration**: Extend GenAI module with vector embeddings (e.g., ChromaDB/Faiss) for meteorological anomaly explanations and climate report synthesis.
 
 ---
 
