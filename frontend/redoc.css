@@ -1,6 +1,6 @@
-/* =================================================================
-   WEATHERFLOW â€”€Custom ReDoc Modern Dark Theme Stylesheet
-   ================================================================ */
+/* ==========================================================================
+   WEATHERFLOW - Custom ReDoc Modern Dark Theme Stylesheet
+   ========================================================================== */
 
 :root {
   --bg-main: #0b0f19;
@@ -13,13 +13,13 @@
   --accent-amber: #f59e0b;
   --accent-red: #ef4444;
   --text-primary: #f8fafc;
-  --text-secondary: #94a38b;
+  --text-secondary: #94a3b8;
   --text-muted: #64748b;
   --border-subtle: rgba(255, 255, 255, 0.08);
   --border-focus: rgba(56, 189, 248, 0.4);
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
@@ -32,16 +32,17 @@ body.redoc-body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* =================================================================
+/* ==========================================================================
    Top Navigation Header
-   ================================================================= */
+   ========================================================================== */
 .redoc-custom-navbar {
   position: sticky;
   top: 0;
   left: 0;
   right: 0;
-  height: 62px;
-  background: rgba(11, 15, 25, 0.94);
+  min-height: 60px;
+  height: 60px;
+  background: rgba(11, 15, 25, 0.95);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--border-subtle);
@@ -58,10 +59,176 @@ body.redoc-body {
   align-items: center;
   gap: 0.75rem;
 }
-œ™YØËXœ˜[™Âˆ\Ü^Nˆ›^Âˆ[YÛ‹Z][\ÎˆÙ[\ÂˆØ\ˆœ™[NÂˆ^YXÛÜ˜][Ûˆ›Û™NÂŸB‚‹œ™YØËXœ˜[™ZXÛÛˆÂˆ\Ü^Nˆ›^Âˆ[YÛ‹Z][\ÎˆÙ[\Âˆ\İYKXÛÛ[ˆÙ[\ÂˆÚYˆÌœÂˆZYÚˆÌœÂˆ›Ü™\‹\˜Y]\ÎˆÂˆ˜XÚÙÜ›İ[™ˆ[™X\‹YÜ˜YY[
-LÍYYËÌÍËÌÎ™
-NÂˆÛÛÜˆÌŒŒNNÂˆ›Û\Ú^™NˆKŒ\™[NÂˆ›Û]ÙZYÚˆÂˆ›Ş\ÚYİÎˆM\™Ø˜JM‹NKJNÂŸB‚‹œ™YØËXœ˜[™]]HÂˆ›Û\Ú^™NˆKŒM\™[NÂˆ›Û]ÙZYÚˆÂˆ]\‹\ÜXÚ[™ÎˆLŒY[NÂˆ˜XÚÙÜ›İ[™ˆ[™X\‹YÜ˜YY[
-LÍYYËÙ™™™™™ˆ	KÌÎ™L	JNÂˆ]ÙXšÚ]X˜XÚÙÜ›İ[™XÛ\ˆ^Âˆ]ÙXšÚ]]^Yš[XÛÛÜˆ˜[œÜ\™[ÂŸB‚‹œ™YØËX˜YÙHÂˆ›Û\Ú^™Nˆ\™[NÂˆ›Û]ÙZYÚˆÌÂˆ]\‹\ÜXÚ[™ÎˆŒ™[NÂˆY[™ÎˆŒœ™[Hœ™[NÂˆ›Ü™\‹\˜Y]\ÎˆNNN\Âˆ˜XÚÙÜ›İ[™ˆ™Ø˜JM‹NKŒLŠNÂˆÛÛÜˆ˜\ŠKXXØÙ[XŞX[ŠNÂˆ›Ü™\ˆ\ÛÛY™Ø˜JM‹NKŒJNÂˆ^]˜[œÙ›Ü›Nˆ\\˜Ø\ÙNÂŸB‚‹œ™YØËX˜YÙKY[ˆÂˆ›Û\Ú^™Nˆ\™[NÂˆ›Û]ÙZYÚˆÌÂˆY[™ÎˆŒN™[HM\™[NÂˆ›Ü™\‹\˜Y]\ÎˆNNN\Âˆ˜XÚÙÜ›İ[™ˆ™Ø˜JM‹NKLKŒMJNÂˆÛÛÜˆ˜\ŠKXXØÙ[YÜ™Y[ŠNÂˆ›Ü™\ˆ\ÛÛY™Ø˜JM‹NKLKŒÊNÂŸB‚‹œ™YØË[˜]‹[[šÜÈÂˆ\Ü^Nˆ›^Âˆ[YÛ‹Z][\ÎˆÙ[\ÂˆØ\ˆ\™[NÂŸB‚‹œ™YØËXˆÂˆ\Ü^Nˆ[›[™KY›^Âˆ[YÛ‹Z][\ÎˆÙ[\ÂˆØ\ˆ\™[NÂˆ›Û\Ú^™Nˆ™[NÂˆ›Û]ÙZYÚˆŒÂˆY[™Îˆœ™[H\™[NÂˆ›Ü™\‹\˜Y]\ÎˆÂˆ^YXÛÜ˜][Ûˆ›Û™NÂˆ˜[œÚ][Ûˆ[ŒœÈX\ÙNÂˆÚ]K\ÜXÙNˆ›İÜ˜\Âˆ›Ü™\ˆ\ÛÛY˜\ŠKX›Ü™\‹\İXJNÂˆ˜XÚÙÜ›İ[™ˆ™Ø˜JMKMKMKŒJNÂˆÛÛÜˆ˜\ŠK]^\ÙXÛÛ™\JNÂŸB‚‹œ™YØËXšİ™\ˆÂˆ˜XÚÙÜ›İ[™ˆ™Ø˜JMKMKMKŒJNÂˆÛÛÜˆÙ™™™™™Âˆ›Ü™\‹XÛÛÜˆ™Ø˜JMKMKMKŒN
-NÂˆ˜[œÙ›Ü›Nˆ˜[œÛ]VJL\
-NÂŸB‚‹œ™YØËX‹œš[X\HÂˆ˜XÚÙÜ›İ[™ˆ[™X\‹YÜ˜YY[
-LÍYYËÌÍËÌMŒÙXŠNÂˆ›Ü™\‹XÛÛÜˆ™Ø˜JM‹NKŒÍJNÂˆÛÛÜˆÙ™™™™™Âˆ›Ş\ÚYİÎˆœL™Ø˜JÍËNKŒÍKŒÊNÂŸB‚ç&VFö2Ö'Fâç&–Ö'“¦†÷fW"°¢&6¶w&÷VæC¢Æ–æV"Öw&F–VçBƒ3VFVrÂ33c–Â3CFVC‚“°¢&÷‚×6†F÷s¢G‚W‚&v&ƒ3rÂ“’Â#3RÂãCR“°§Ğ ¢ç&VFö2Ö'Fâæ66VçB°¢&6¶w&÷VæC¢&v&ƒSbÂƒ’Â#C‚Âã"“°¢&÷&FW"Ö6öÆ÷#¢&v&ƒSbÂƒ’Â#C‚Âã2“°¢6öÆ÷#¢f"‚ÒÖ66VçBÖ7–â“°§Ğ ¹É•‘½Œµ‰Ñ¸¹…•¹Ğã¦†÷fW"°¢&6¶w&÷VæC¢&v&ƒSbÂƒ’Â#C‚Âã#"“°¢6öÆ÷#¢6fffffc°§Ğ ¹É•‘½Œµ‰Ñ¸¹½ÕÑ±¥¹”ì(€‰½É‘•ÈµÍÑå±”è‘…Í¡•ì)ô((¼¨€ôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôô(€€I•½Œ½¹Ñ…¥¹•È=Ù•ÉÉ¥‘•Ì(€€€ôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôôô€¨¼(É•‘½Œµ½¹Ñ…¥¹•Èì(€µ¥¸µ¡•¥¡Ğè…±Œ ÄÀÁÙ €´€ØÉÁà¤ì(€‰…­É½Õ¹µ½±½ÈèÙ…È ´µ‰œµµ…¥¸¤ì)ô((¼¨¥àI•½Œµ¥‘‘±”½¹Ñ•¹Ğ½±Õµ¸‘…É¬ÍÑå±¥¹œ€¨¼)‘¥Ùm±…ÍÌ¨ô‰ÍÑå±•µ½¹Ñ•¹Ğ‰t°)‘¥Ùm±…ÍÌ¨ô‰5¥‘‘±•A…¹•°‰t°)‘¥Ùm±…ÍÌ¨ô‰…Á¤µ½¹Ñ•¹Ğ‰t°(¹É•‘½ŒµİÉ…Àì(€‰…­É½Õ¹µ½±½ÈèÙ…È ´µ‰œµµ…¥¸¤€…¥µÁ½ÉÑ…¹Ğì(€½±½ÈèÙ…È ´µÑ•áĞµÁÉ¥µ…Éä¤€…¥µÁ½ÉÑ…¹Ğì)ô((¼¨M¥‘•‰…ÈM•…É 	½àA½±¥Í €¨¼)¥¹ÁÕÑmÑåÁ”ô‰Ñ•áĞ‰um±…ÍÌ¨ô‰M•…É¡%¹ÁÕĞ‰t°)‘¥Ùm±…ÍÌ¨ô‰M•…É¡]É…ÁÁ•È‰t¥¹ÁÕĞì(€‰…­É½Õ¹èÉ‰„ ÈÔÔ°€ÈÔÔ°€ÈÔÔ°€À¸ÀÔ¤€…¥µÁ½ÉÑ…¹Ğì(€‰½É‘•Èè€ÅÁàÍ½±¥Ù…È ´µ‰½É‘•ÈµÍÕ‰Ñ±”¤€…¥µÁ½ÉÑ…¹Ğì(€‰½É‘•ÈµÉ…‘¥ÕÌè€áÁà€…¥µÁ½ÉÑ…¹Ğì(€½±½Èè€™™™™™˜€…¥µÁ½ÉÑ…¹Ğì(€™½¹ĞµÍ¥é”è€À¸àÕÉ•´€…¥µÁ½ÉÑ…¹Ğì(€Á…‘‘¥¹œè€À¸ÕÉ•´€À¸ÜÕÉ•´€…¥µÁ½ÉÑ…¹Ğì(€ÑÉ…¹Í¥Ñ¥½¸è‰½É‘•Èµ½±½È€ÀÉÌ•…Í”€…¥µÁ½ÉÑ…¹Ğì)ô()¥¹ÁÕÑmÑåÁ”ô‰Ñ•áĞ‰um±…ÍÌ¨ô‰M•…É¡%¹ÁÕĞ‰té™½ÕÌ°)‘¥Ùm±…ÍÌ¨ô‰M•…É¡]É…ÁÁ•È‰t¥¹ÁÕĞé™½ÕÌì(€‰½É‘•Èµ½±½ÈèÙ…È ´µ…•¹Ğµå…¸¤€…¥µÁ½ÉÑ…¹Ğì(€½ÕÑ±¥¹”è¹½¹”€…¥µÁ½ÉÑ…¹Ğì(€‰½àµÍ¡…‘½Üè€À€À€À€ÉÁàÉ‰„ ÔØ°€Äàä°€ÈĞà°€À¸È¤€…¥µÁ½ÉÑ…¹Ğì)ô((¼¨ÕÍÑ½´MÉ½±±‰…ÉÌ€¨¼(èèµİ•‰­¥ĞµÍÉ½±±‰…Èì(€İ¥‘Ñ è€áÁàì(€¡•¥¡Ğè€áÁàì)ô((èèµİ•‰­¥ĞµÍÉ½±±‰…ÈµÑÉ…¬ì(€‰…­É½Õ¹èÙ…È ´µ‰œµµ…¥¸¤ì)ô((èèµİ•‰­¥ĞµÍÉ½±±‰…ÈµÑ¡Õµˆì(€‰…­É½Õ¹èÉ‰„ ÈÔÔ°€ÈÔÔ°€ÈÔÔ°€À¸ÄÔ¤ì(€‰½É‘•ÈµÉ…‘¥ÕÌè€ÑÁàì)ô((èèµİ•‰­¥ĞµÍÉ½±±‰…ÈµÑ¡Õµˆé¡½Ù•Èì(€‰…­É½Õ¹èÉ‰„ ÔØ°€Äàä°€ÈĞà°€À¸Ğ¤ì)ô(
+
+.redoc-brand,
+.redoc-brand:visited {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none !important;
+  color: #ffffff !important;
+}
+
+.redoc-brand-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #0284c7, #38bdf8);
+  color: #0b0f19;
+  font-size: 1.1rem;
+  font-weight: 800;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.45);
+}
+
+.redoc-brand-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #ffffff 40%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.redoc-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  background: rgba(56, 189, 248, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  text-transform: uppercase;
+}
+
+.redoc-badge-env {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.25));
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  line-height: 1.3;
+}
+
+.redoc-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.redoc-btn,
+.redoc-btn:visited {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.42rem 0.85rem;
+  border-radius: 8px;
+  text-decoration: none !important;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary) !important;
+}
+
+.redoc-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+  text-decoration: none !important;
+}
+
+.redoc-btn.primary,
+.redoc-btn.primary:visited {
+  background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  color: #ffffff !important;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+}
+
+.redoc-btn.primary:hover {
+  background: linear-gradient(135deg, #0369a1, #1d4ed8) !important;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.45);
+  color: #ffffff !important;
+}
+
+.redoc-btn.accent,
+.redoc-btn.accent:visited {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.3) !important;
+  color: var(--accent-cyan) !important;
+}
+
+.redoc-btn.accent:hover {
+  background: rgba(56, 189, 248, 0.22) !important;
+  color: #ffffff !important;
+}
+
+.redoc-btn.outline {
+  border-style: dashed;
+}
+
+/* ==========================================================================
+   ReDoc Container Overrides
+   ========================================================================== */
+#redoc-container {
+  min-height: calc(100vh - 60px);
+  background-color: var(--bg-main);
+}
+
+.redoc-wrap {
+  background-color: var(--bg-main) !important;
+}
+
+div[class*="styled-content"],
+div[class*="MiddlePanel"],
+div[class*="api-content"] {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+input[type="text"][class*="SearchInput"],
+div[class*="SearchWrapper"] input {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid var(--border-subtle) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 0.85rem !important;
+  padding: 0.5rem 0.75rem !important;
+  transition: border-color 0.2s ease !important;
+}
+
+input[type="text"][class*="SearchInput"]:focus,
+div[class*="SearchWrapper"] input:focus {
+  border-color: var(--accent-cyan) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.4);
+}

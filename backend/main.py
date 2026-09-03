@@ -248,13 +248,17 @@ def custom_swagger_docs(request: Request):
     # Inject top navigation bar
     custom_nav = """
     <nav class="custom-docs-navbar">
-      <a href="/" class="custom-docs-brand">
-        <div class="custom-docs-brand-icon">⚡</div>
-        <div class="custom-docs-brand-title">WEATHERFLOW API EXPLORER</div>
-      </a>
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <a href="/" class="custom-docs-brand">
+          <div class="custom-docs-brand-icon">⚡</div>
+          <div class="custom-docs-brand-title">WEATHERFLOW API EXPLORER</div>
+        </a>
+        <span style="font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 2px 7px; border-radius: 6px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.25)); border: 1px solid rgba(56, 189, 248, 0.45); color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);">PRO</span>
+      </div>
       <div class="custom-docs-nav-links">
         <a href="/" class="custom-docs-nav-btn primary">🏠 Main Dashboard</a>
         <a href="/links" class="custom-docs-nav-btn">🌐 All Links Portal</a>
+        <a href="/redoc" class="custom-docs-nav-btn">📖 ReDoc Spec</a>
         <a href="/json-to-ui" class="custom-docs-nav-btn">✨ JSON to UI</a>
       </div>
     </nav>
@@ -284,6 +288,92 @@ def custom_redoc_ui():
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/redoc.css">
   <link rel="icon" type="image/x-icon" href="https://fastapi.tiangolo.com/img/favicon.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body.redoc-body {
+      margin: 0; padding: 0;
+      background-color: #0b0f19 !important;
+      color: #f8fafc !important;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .redoc-custom-navbar {
+      position: sticky; top: 0; left: 0; right: 0;
+      min-height: 60px; height: 60px;
+      background: rgba(11, 15, 25, 0.96) !important;
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 1.75rem; z-index: 99999;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    .redoc-brand-group { display: flex; align-items: center; gap: 0.75rem; }
+    .redoc-brand, .redoc-brand:visited {
+      display: flex; align-items: center; gap: 0.6rem;
+      text-decoration: none !important; color: #ffffff !important;
+    }
+    .redoc-brand-icon {
+      display: flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #0b0f19; font-size: 1.1rem; font-weight: 800;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.45);
+    }
+    .redoc-brand-title {
+      font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;
+      background: linear-gradient(135deg, #ffffff 40%, #38bdf8 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .redoc-badge {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em;
+      padding: 0.2rem 0.6rem; border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.12); color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.25); text-transform: uppercase;
+    }
+    .redoc-badge-env {
+      font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em;
+      padding: 2px 7px; border-radius: 6px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.25));
+      border: 1px solid rgba(56, 189, 248, 0.45); color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25); line-height: 1.3;
+    }
+    .redoc-nav-links { display: flex; align-items: center; gap: 0.65rem; }
+    .redoc-btn, .redoc-btn:visited {
+      display: inline-flex; align-items: center; gap: 0.45rem;
+      font-size: 0.8rem; font-weight: 600; padding: 0.42rem 0.85rem;
+      border-radius: 8px; text-decoration: none !important;
+      transition: all 0.2s ease; white-space: nowrap;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05); color: #cbd5e1 !important;
+    }
+    .redoc-btn:hover {
+      background: rgba(255, 255, 255, 0.12) !important; color: #ffffff !important;
+      border-color: rgba(255, 255, 255, 0.22); transform: translateY(-1px);
+      text-decoration: none !important;
+    }
+    .redoc-btn.primary, .redoc-btn.primary:visited {
+      background: linear-gradient(135deg, #0284c7, #2563eb) !important;
+      border-color: rgba(56, 189, 248, 0.4) !important; color: #ffffff !important;
+      box-shadow: 0 2px 10px rgba(37, 99, 235, 0.3);
+    }
+    .redoc-btn.primary:hover {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8) !important;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.45);
+    }
+    .redoc-btn.accent, .redoc-btn.accent:visited {
+      background: rgba(56, 189, 248, 0.12) !important;
+      border-color: rgba(56, 189, 248, 0.3) !important; color: #38bdf8 !important;
+    }
+    .redoc-btn.accent:hover {
+      background: rgba(56, 189, 248, 0.22) !important; color: #ffffff !important;
+    }
+    .redoc-btn.outline { border-style: dashed; }
+    #redoc-container { min-height: calc(100vh - 60px); background-color: #0b0f19; }
+    .redoc-wrap { background-color: #0b0f19 !important; }
+    div[class*="styled-content"], div[class*="MiddlePanel"], div[class*="api-content"] {
+      background-color: #0b0f19 !important; color: #f8fafc !important;
+    }
+  </style>
 </head>
 <body class="redoc-body">
   <!-- Top Navigation Header -->
@@ -294,7 +384,7 @@ def custom_redoc_ui():
         <span class="redoc-brand-title">WEATHERFLOW</span>
       </a>
       <span class="redoc-badge">SPECIFICATION</span>
-      <span class="redoc-badge-env">PROD</span>
+      <span class="redoc-badge-env">PRO</span>
     </div>
 
     <nav class="redoc-nav-links">
