@@ -348,11 +348,25 @@
       <!-- =============================================================== -->
       <!-- SECTION 3: ANALYTICS & BREAKDOWNS -->
       <!-- =============================================================== -->
+      <!-- =============================================================== -->
+      <!-- SECTION 3: ANALYTICS & BREAKDOWNS -->
+      <!-- =============================================================== -->
       <section id="section-analytics" class="content-section">
         <div class="panel-card">
-          <div class="panel-header">
-            <h2>Detailed Weather Analytics & Comparisons</h2>
+          <div class="panel-header flex-between">
+            <div>
+              <h2>Detailed Meteorological Analytics & Comparisons</h2>
+              <p class="section-desc">Multi-variable atmospheric distributions, condition shares, correlation plots, and regional rankings.</p>
+            </div>
+            <div class="analytics-toolbar">
+              <span class="badge" id="badge-analytics-records">Live Data Warehouse Sync</span>
+              <button id="btn-refresh-analytics" class="btn btn-secondary btn-sm" title="Recompute charts">
+                🔄 Recompute
+              </button>
+            </div>
           </div>
+
+          <!-- KPI Summary Row -->
           <div class="analytics-metrics-grid">
             <div class="stat-box">
               <div class="stat-title">Overall Maximum Temperature</div>
@@ -372,12 +386,114 @@
             </div>
           </div>
 
-          <div class="chart-container full-width">
-            <div class="panel-header">
-              <h3>Records Count Distribution by City</h3>
+          <!-- Charts Row 1: Weather Condition Donut (Pie) & Regional Ingestion Polar Area Chart -->
+          <div class="analytics-charts-grid-2col">
+            <!-- Chart 1: Donut / Pie Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <span class="chart-card-icon">🍩</span>
+                  <div>
+                    <h3 class="chart-card-title">Weather Condition Distribution</h3>
+                    <p class="chart-card-sub">Categorical breakdown of atmospheric states</p>
+                  </div>
+                </div>
+                <span class="chart-type-pill">Pie / Donut</span>
+              </div>
+              <div class="chart-canvas-wrapper" style="height: 320px;">
+                <canvas id="chart-condition-donut"></canvas>
+              </div>
             </div>
-            <canvas id="chart-city-distribution"></canvas>
+
+            <!-- Chart 2: Polar Area Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <span class="chart-card-icon">🧭</span>
+                  <div>
+                    <h3 class="chart-card-title">Station Observation Density</h3>
+                    <p class="chart-card-sub">Radial density of telemetry records ingested per city</p>
+                  </div>
+                </div>
+                <span class="chart-type-pill">Polar Area</span>
+              </div>
+              <div class="chart-canvas-wrapper" style="height: 320px;">
+                <canvas id="chart-station-polar"></canvas>
+              </div>
+            </div>
           </div>
+
+          <!-- Charts Row 2: Multi-Station Spline Trendlines & Multi-Variable Radar Chart -->
+          <div class="analytics-charts-grid-2col">
+            <!-- Chart 3: Spline Line Graph -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <span class="chart-card-icon">📈</span>
+                  <div>
+                    <h3 class="chart-card-title">7-Day Meteorological Trajectory</h3>
+                    <p class="chart-card-sub">Smoothed time-series curves across monitored cities</p>
+                  </div>
+                </div>
+                <span class="chart-type-pill">Spline Line</span>
+              </div>
+              <div class="chart-canvas-wrapper" style="height: 320px;">
+                <canvas id="chart-multicity-trend"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 4: Radar / Spider Chart -->
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <div class="chart-title-group">
+                  <span class="chart-card-icon">🕸️</span>
+                  <div>
+                    <h3 class="chart-card-title">Multi-Variable City Radar</h3>
+                    <p class="chart-card-sub">Comparative profiles across Temp, Humidity, Wind & Records</p>
+                  </div>
+                </div>
+                <span class="chart-type-pill">Radar / Spider</span>
+              </div>
+              <div class="chart-canvas-wrapper" style="height: 320px;">
+                <canvas id="chart-city-radar"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Charts Row 3: Temperature vs Humidity Scatter Correlation Chart (Full Width) -->
+          <div class="chart-card full-width-card">
+            <div class="chart-card-header">
+              <div class="chart-title-group">
+                <span class="chart-card-icon">⚄</span>
+                <div>
+                  <h3 class="chart-card-title">Meteorological Correlation Analysis (Scatter Graph)</h3>
+                  <p class="chart-card-sub">Temperature vs Humidity inverse equilibrium across all warehouse samples</p>
+                </div>
+              </div>
+              <span class="chart-type-pill">Scatter / Correlation</span>
+            </div>
+            <div class="chart-canvas-wrapper" style="height: 340px;">
+              <canvas id="chart-correlation-scatter"></canvas>
+            </div>
+          </div>
+
+          <!-- Charts Row 4: Ranked Thermal Spectrum Horizontal Bar Chart (Full Width) -->
+          <div class="chart-card full-width-card">
+            <div class="chart-card-header">
+              <div class="chart-title-group">
+                <span class="chart-card-icon">🌡️</span>
+                <div>
+                  <h3 class="chart-card-title">Thermal Spectrum Ranking (Horizontal Bar Chart)</h3>
+                  <p class="chart-card-sub">Ranked stations from warmest to coolest with thermal gradient</p>
+                </div>
+              </div>
+              <span class="chart-type-pill">Horizontal Bar</span>
+            </div>
+            <div class="chart-canvas-wrapper" style="height: 380px;">
+              <canvas id="chart-thermal-ranked"></canvas>
+            </div>
+          </div>
+
         </div>
       </section>
 

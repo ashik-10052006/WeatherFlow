@@ -299,3 +299,89 @@ class WeatherRepository:
             }
             for r in rows
         ]
+
+    @staticmethod
+    def get_conditions_distribution(db: Session) -> List[Dict[str, Any]]:
+        """Fetch count and percentage of observations by weather condition for donut/pie charts."""
+        sql = text("""
+            SELECT 
+                ISNULL(weather_condition, 'Clear') AS condition,
+                COUNT(*) AS record_count,
+                ROUND(AVG(CAST(temperature_c AS FLOAT)), 1) AS avg_temp,
+                ROUND(AVG(CAST(humidity_percent AS FLOAT)), 1) AS avg_humidity
+            FROM weather_records
+            GROUP BY weather_condition
+            ORDER BY record_count DESC;
+        """)
+        rows = db.execute(sql).mappings().all()
+        return [
+            {
+                "condition": r["condition"],
+                "record_count": r["record_count"],
+                "avg_temp": float(r["avg_temp"]) if r["avg_temp"] is not None else None,
+                "avg_humidity": float(r["avg_humidity"]) if r["avg_humidity"] is not None else None,
+            }
+            for r in rows
+        ]
+
+    @staticmethod
+    def get_city_metrics_comparison(db: Session) -> List[Dict[str, Any]]:
+        """Fetch multi-variable comparison metrics across cities for radar and polar area charts."""
+        sql = text("""
+            SELECT 
+                l.city_name,
+                l.country,
+                ROUND(AVG(CAST(w.temperature_c AS FLOAT)), 2) AS avg_temp,
+                ROUND(AVG(CAST(w.humidity_percent AS FLOAT)), 2) AS avg_humidity,
+                ROUND(AVG(CAST(w.wind_speed_kmh AS FLOAT)), 2) AS avg_wind,
+                MAX(w.temperature_c) AS max_temp,
+                MIN(w.temperature_c) AS min_temp,
+                COUNT(w.weather_id) AS total_records
+            FROM locations l
+            LEFT JOIN weather_records w ON l.location_id = w.location_id
+            GROUP BY l.city_name, l.country
+            ORDER BY avg_temp DESC;
+        """)
+        rows = db.execute(sql).mappings().all()
+        return [
+            {
+                "city_name": r["city_name"],
+                "country": r["country"],
+                "avg_temp": float(r["avg_temp"]) if r["avg_temp"] is not None else 0.0,
+                "avg_humidity": float(r["avg_humidity"]) if r["avg_humidity"] is not None else 0.0,
+                "avg_wind": float(r["avg_wind"]) if r["avg_wind"] is not None else 0.0,
+                "max_temp": float(r["max_temp"]) if r["max_temp"] is not None else 0.0,
+                "min_temp": float(r["min_temp"]) if r["min_temp"] is not None else 0.0,
+                "total_records": r["total_records"],
+            }
+            for r in rows
+        ]
+
+    @staticmethod
+    def get_correlation_scatter(db: Session, limit: int = 200) -> List[Dict[str, Any]]:
+        """Fetch observation pairs for temperature vs humidity scatter plot."""
+        sql = text("""
+            SELECT TOP (:limit)
+                l.city_name,
+                w.temperature_c,
+                w.humidity_percent,
+                w.wind_speed_kmh,
+                ISNULL(w.weather_condition, 'Clear') AS weather_condition,
+                w.recorded_at
+            FROM weather_records w
+            INNER JOIN locations l ON w.location_id = l.location_id
+            WHERE w.temperature_c IS NOT NULL AND w.humidity_percent IS NOT NULL
+            ORDER BY w.recorded_at DESC;
+        """)
+        rows = db.execute(sql, {"limit": limit}).mappings().all()
+        return [
+            {
+                "city_name": r["city_name"],
+                "temperature_c": float(r["temperature_c"]),
+                "humidity_percent": float(r["humidity_percent"]),
+                "wind_speed_kmh": float(r["wind_speed_kmh"]) if r["wind_speed_kmh"] is not None else 0.0,
+                "weather_condition": r["weather_condition"],
+                "recorded_at": r["recorded_at"].isoformat() if r["recorded_at"] else "",
+            }
+            for r in rows
+        ]

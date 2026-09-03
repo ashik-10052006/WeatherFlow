@@ -58,3 +58,45 @@ def get_humidity_trend(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve humidity trend data.",
         )
+
+
+@router.get("/conditions")
+def get_conditions_distribution(db: Session = Depends(get_db)):
+    """Retrieve frequency and percentages of weather conditions for donut / pie charts."""
+    try:
+        return WeatherRepository.get_conditions_distribution(db)
+    except Exception as e:
+        logger.error(f"Error fetching conditions distribution: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve conditions distribution data.",
+        )
+
+
+@router.get("/city-metrics")
+def get_city_metrics(db: Session = Depends(get_db)):
+    """Retrieve multi-variable meteorological metrics for radar and polar area charts."""
+    try:
+        return WeatherRepository.get_city_metrics_comparison(db)
+    except Exception as e:
+        logger.error(f"Error fetching city metrics comparison: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve city metrics data.",
+        )
+
+
+@router.get("/correlation")
+def get_correlation_scatter(
+    limit: int = Query(200, ge=10, le=1000, description="Max observation data points"),
+    db: Session = Depends(get_db),
+):
+    """Retrieve temperature vs humidity observation pairs for scatter plot."""
+    try:
+        return WeatherRepository.get_correlation_scatter(db, limit=limit)
+    except Exception as e:
+        logger.error(f"Error fetching correlation scatter data: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve correlation scatter data.",
+        )

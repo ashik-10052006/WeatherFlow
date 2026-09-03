@@ -10,6 +10,12 @@ let tempTrendChart = null;
 let humidityTrendChart = null;
 let cityDistChart = null;
 let drawerTrendChart = null;
+let chartConditionDonut = null;
+let chartStationPolar = null;
+let chartMultiCityTrend = null;
+let chartCityRadar = null;
+let chartCorrelationScatter = null;
+let chartThermalRanked = null;
 
 // Application State
 const state = {
@@ -180,6 +186,15 @@ function setupActions() {
       renderCharts();
     });
   }
+
+  // Advanced Analytics Recompute Button
+  const btnRefreshAnalytics = document.getElementById("btn-refresh-analytics");
+  if (btnRefreshAnalytics) {
+    btnRefreshAnalytics.addEventListener("click", () => {
+      showToast("Recomputing meteorological charts...", "info");
+      fetchAdvancedAnalytics();
+    });
+  }
 }
 
 // ============================================================================
@@ -195,6 +210,7 @@ async function fetchAllData() {
       fetchHumidityTrend(),
       fetchWeatherHistory(),
       fetchPipelineRuns(),
+      fetchAdvancedAnalytics(),
     ]);
   } catch (error) {
     console.error("Error loading dashboard data:", error);
@@ -1666,35 +1682,290 @@ function renderTrendCharts() {
   }
 }
 
-function renderCityDistributionChart(latestData) {
-  const ctx = document.getElementById("chart-city-distribution");
-  if (!ctx) return;
+// ============================================================================
+// Advanced Analytics Suite: Multi-Chart Visualization Engine
+// ============================================================================
+async function fetchAdvancedAnalytics() {
+  try {
+    const [condRes, metricsRes, trendRes, corrRes] = await Promise.all([
+      fetch(`${API_BASE}/api/analytics/conditions`),
+      fetch(`${API_BASE}/api/analytics/city-metrics`),
+      fetch(`${API_BASE}/api/analytics/temperature-trend?days=7`),
+      fetch(`${API_BASE}/api/analytics/correlation?limit=200`),
+    ]);
 
-  if (cityDistChart) cityDistChart.destroy();
-  if (!latestData || latestData.length === 0) return;
+    const conditions = condRes.ok ? await condRes.json() : [];
+    const cityMetrics = metricsRes.ok ? await metricsRes.json() : [];
+    const trendData = trendRes.ok ? await trendRes.json() : [];
+    const correlationData = corrRes.ok ? await corrRes.json() : [];
 
-  const labels = latestData.map((d) => d.city_name);
-  const temps = latestData.map((d) => d.temperature_c);
-  const humidities = latestData.map((d) => d.humidity_percent);
+    const badge = document.getElementById("badge-analytics-records");
+    if (badge && correlationData.length > 0) {
+      badge.textContent = `${correlationData.length}+ Observations Ingested`;
+    }
 
-  cityDistChart = new Chart(ctx, {
-    type: "bar",
+    renderConditionDonut(conditions);
+    renderStationPolar(cityMetrics);
+    renderMultiStationTrend(trendData);
+    renderCityRadar(cityMetrics);
+    renderCorrelationScatter(correlationData);
+    renderThermalRanked(cityMetrics);
+  } catch (err) {
+    console.error("fetchAdvancedAnalytics error:", err);
+  }
+}
+
+function renderConditionDonut(conditions) {
+  const canvas = document.getElementById("chart-condition-donut");
+  if (!canvas || !conditions || conditions.length === 0) return;
+  if (chartConditionDonut) chartConditionDonut.destroy();
+
+  const labels = conditions.map((c) => c.condition);
+  const counts = conditions.map((c) => c.record_count);
+  const palette = [
+    "#38bdf8", "#0ea5e9", "#06b6d4", "#10b981", "#34d399",
+    "#f59e0b", "#fbbf24", "#f97316", "#ef4444", "#a855f7",
+    "#8b5cf6", "#6366f1", "#ec4899", "#14b8a6", "#94a3b8", "#64748b"
+  ];
+
+  chartConditionDonut = new Chart(canvas, {
+    type: "doughnut",
     data: {
       labels,
       datasets: [
         {
-          label: "Current Temperature (°C)",
-          data: temps,
-          backgroundColor: "rgba(249, 115, 22, 0.7)",
-          borderColor: "#f97316",
-          borderWidth: 1,
+          data: counts,
+          backgroundColor: palette.slice(0, conditions.length),
+          borderColor: "#0f172a",
+          borderWidth: 2,
+          hoverOffset: 6,
         },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "65%",
+      plugins: {
+        legend: {
+          position: "right",
+          labels: {
+            color: "#cbd5e1",
+            font: { size: 11 },
+            boxWidth: 12,
+            padding: 8,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const val = ctx.parsed;
+              const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+              return ` ${ctx.label}: ${val} records (${pct}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+function renderStationPolar(cityMetrics) {
+  const canvas = document.getElementById("chart-station-polar");
+  if (!canvas || !cityMetrics || cityMetrics.length === 0) return;
+  if (chartStationPolar) chartStationPolar.destroy();
+
+  const labels = cityMetrics.map((c) => c.city_name);
+  const counts = cityMetrics.map((c) => c.total_records);
+  const bgColors = cityMetrics.map(
+    (_, i) => `hsla(${(i * 360) / cityMetrics.length}, 80%, 60%, 0.65)`
+  );
+
+  chartStationPolar = new Chart(canvas, {
+    type: "polarArea",
+    data: {
+      labels,
+      datasets: [
         {
-          label: "Relative Humidity (%)",
-          data: humidities,
-          backgroundColor: "rgba(6, 182, 212, 0.7)",
-          borderColor: "#06b6d4",
+          data: counts,
+          backgroundColor: bgColors,
+          borderColor: "rgba(15, 23, 42, 0.8)",
+          borderWidth: 1.5,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          angleLines: { color: "rgba(255, 255, 255, 0.1)" },
+          ticks: { color: "#94a3b8", backdropColor: "transparent", font: { size: 10 } },
+        },
+      },
+      plugins: {
+        legend: {
+          position: "right",
+          labels: { color: "#cbd5e1", font: { size: 11 }, boxWidth: 10, padding: 6 },
+        },
+      },
+    },
+  });
+}
+
+function renderMultiStationTrend(trendData) {
+  const canvas = document.getElementById("chart-multicity-trend");
+  if (!canvas || !trendData || trendData.length === 0) return;
+  if (chartMultiCityTrend) chartMultiCityTrend.destroy();
+
+  // Distinct dates sorted
+  const dates = Array.from(new Set(trendData.map((t) => t.date))).sort();
+
+  // Top 5 cities by frequency
+  const cityCounts = {};
+  trendData.forEach((t) => (cityCounts[t.city_name] = (cityCounts[t.city_name] || 0) + 1));
+  const topCities = Object.keys(cityCounts)
+    .sort((a, b) => cityCounts[b] - cityCounts[a])
+    .slice(0, 5);
+
+  const colors = ["#38bdf8", "#f97316", "#10b981", "#a855f7", "#fbbf24"];
+
+  const datasets = topCities.map((cityName, idx) => {
+    const cityRows = trendData.filter((t) => t.city_name === cityName);
+    const rowMap = new Map(cityRows.map((r) => [r.date, r.avg_temperature]));
+    const data = dates.map((d) => (rowMap.has(d) ? rowMap.get(d) : null));
+    const col = colors[idx % colors.length];
+
+    return {
+      label: cityName,
+      data,
+      borderColor: col,
+      backgroundColor: col + "20",
+      tension: 0.35,
+      borderWidth: 2.2,
+      pointRadius: 3,
+      pointHoverRadius: 6,
+      spanGaps: true,
+    };
+  });
+
+  chartMultiCityTrend = new Chart(canvas, {
+    type: "line",
+    data: { labels: dates, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#cbd5e1", boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y + "°C" : "No Data"}`,
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(255, 255, 255, 0.05)" } },
+        y: {
+          ticks: { color: "#64748b", callback: (v) => `${v}°C` },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
+        },
+      },
+    },
+  });
+}
+
+function renderCityRadar(cityMetrics) {
+  const canvas = document.getElementById("chart-city-radar");
+  if (!canvas || !cityMetrics || cityMetrics.length === 0) return;
+  if (chartCityRadar) chartCityRadar.destroy();
+
+  // Select 4 contrasting cities
+  const candidateNames = ["Mumbai", "Bangalore", "Delhi", "Dubai", "London", "Cairo", "Tokyo"];
+  const selectedCities = cityMetrics
+    .filter((c) => candidateNames.includes(c.city_name))
+    .slice(0, 4);
+
+  if (selectedCities.length === 0) {
+    selectedCities.push(...cityMetrics.slice(0, 4));
+  }
+
+  const radarColors = [
+    { border: "#38bdf8", bg: "rgba(56, 189, 248, 0.25)" },
+    { border: "#f97316", bg: "rgba(249, 115, 22, 0.25)" },
+    { border: "#10b981", bg: "rgba(16, 185, 129, 0.25)" },
+    { border: "#a855f7", bg: "rgba(168, 85, 247, 0.25)" },
+  ];
+
+  const datasets = selectedCities.map((c, idx) => {
+    const col = radarColors[idx % radarColors.length];
+    return {
+      label: c.city_name,
+      data: [
+        c.avg_temp,
+        c.avg_humidity,
+        c.avg_wind,
+        c.max_temp,
+        Math.min(c.total_records * 4, 100),
+      ],
+      borderColor: col.border,
+      backgroundColor: col.bg,
+      borderWidth: 2,
+      pointBackgroundColor: col.border,
+      pointRadius: 3,
+    };
+  });
+
+  chartCityRadar = new Chart(canvas, {
+    type: "radar",
+    data: {
+      labels: ["Avg Temp (°C)", "Humidity (%)", "Wind (km/h)", "Max Temp (°C)", "Records Vol."],
+      datasets,
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          angleLines: { color: "rgba(255, 255, 255, 0.1)" },
+          grid: { color: "rgba(255, 255, 255, 0.08)" },
+          pointLabels: { color: "#cbd5e1", font: { size: 10.5, weight: "bold" } },
+          ticks: { display: false },
+        },
+      },
+      plugins: {
+        legend: { labels: { color: "#cbd5e1", boxWidth: 10 } },
+      },
+    },
+  });
+}
+
+function renderCorrelationScatter(correlationData) {
+  const canvas = document.getElementById("chart-correlation-scatter");
+  if (!canvas || !correlationData || correlationData.length === 0) return;
+  if (chartCorrelationScatter) chartCorrelationScatter.destroy();
+
+  const points = correlationData.map((d) => ({
+    x: d.temperature_c,
+    y: d.humidity_percent,
+    city: d.city_name,
+    wind: d.wind_speed_kmh,
+    condition: d.weather_condition,
+  }));
+
+  chartCorrelationScatter = new Chart(canvas, {
+    type: "scatter",
+    data: {
+      datasets: [
+        {
+          label: "Warehouse Observations",
+          data: points,
+          backgroundColor: "rgba(56, 189, 248, 0.65)",
+          borderColor: "#38bdf8",
           borderWidth: 1,
+          pointRadius: 5.5,
+          pointHoverRadius: 9,
         },
       ],
     },
@@ -1702,11 +1973,92 @@ function renderCityDistributionChart(latestData) {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: "#94a3b8" } },
+        legend: { labels: { color: "#cbd5e1" } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const p = ctx.raw;
+              return ` ${p.city}: ${p.x}°C, ${p.y}% Humidity (${p.condition}, Wind: ${p.wind} km/h)`;
+            },
+          },
+        },
       },
       scales: {
-        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } },
-        y: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } },
+        x: {
+          title: { display: true, text: "Temperature (°C)", color: "#94a3b8", font: { weight: "bold" } },
+          ticks: { color: "#64748b" },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
+        },
+        y: {
+          title: { display: true, text: "Relative Humidity (%)", color: "#94a3b8", font: { weight: "bold" } },
+          ticks: { color: "#64748b" },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
+        },
+      },
+    },
+  });
+}
+
+function renderThermalRanked(cityMetrics) {
+  const canvas = document.getElementById("chart-thermal-ranked");
+  if (!canvas || !cityMetrics || cityMetrics.length === 0) return;
+  if (chartThermalRanked) chartThermalRanked.destroy();
+
+  const sorted = [...cityMetrics].sort((a, b) => b.avg_temp - a.avg_temp);
+  const labels = sorted.map((c) => c.city_name);
+  const avgTemps = sorted.map((c) => c.avg_temp);
+  const maxTemps = sorted.map((c) => c.max_temp);
+
+  const barColors = avgTemps.map((t) => {
+    if (t >= 32) return "rgba(239, 68, 68, 0.85)"; // Red
+    if (t >= 28) return "rgba(249, 115, 22, 0.85)"; // Orange
+    if (t >= 22) return "rgba(245, 158, 11, 0.85)"; // Amber
+    return "rgba(56, 189, 248, 0.85)"; // Cyan
+  });
+
+  chartThermalRanked = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Mean Temperature (°C)",
+          data: avgTemps,
+          backgroundColor: barColors,
+          borderRadius: 4,
+          borderWidth: 0,
+        },
+        {
+          label: "Peak Recorded Temperature (°C)",
+          data: maxTemps,
+          backgroundColor: "rgba(255, 255, 255, 0.15)",
+          borderColor: "rgba(255, 255, 255, 0.3)",
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#cbd5e1" } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.x}°C`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: "#64748b", callback: (v) => `${v}°C` },
+          grid: { color: "rgba(255, 255, 255, 0.05)" },
+        },
+        y: {
+          ticks: { color: "#e2e8f0", font: { weight: "bold" } },
+          grid: { display: false },
+        },
       },
     },
   });
