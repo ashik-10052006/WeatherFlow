@@ -18,45 +18,101 @@
       <div class="brand">
         <div class="brand-icon">⚡</div>
         <div class="brand-text">
-          <span class="brand-title">WEATHERDATA</span>
-          <span class="brand-subtitle">Warehouse & Analytics</span>
+          <div class="brand-title-row">
+            <span class="brand-title">WEATHERDATA</span>
+            <span class="brand-badge-env">PROD</span>
+          </div>
+          <span class="brand-subtitle">Warehouse &amp; Analytics</span>
         </div>
       </div>
       
-      <div class="nav-pill-group">
-        <button class="nav-btn active" data-target="section-dashboard">Dashboard</button>
-        <button class="nav-btn" data-target="section-history">Weather History</button>
-        <button class="nav-btn" data-target="section-analytics">Analytics Trends</button>
-        <button class="nav-btn" data-target="section-pipeline">Pipeline Monitor</button>
-        <button class="nav-btn" data-target="section-genai">🤖 GenAI Assistant</button>
-      </div>
+      <nav class="nav-pill-group" aria-label="Main Navigation">
+        <button class="nav-btn active" data-target="section-dashboard">Overview</button>
+        <button class="nav-btn" data-target="section-history">History</button>
+        <button class="nav-btn" data-target="section-analytics">Analytics</button>
+        <button class="nav-btn" data-target="section-pipeline">Pipelines</button>
+        <button class="nav-btn nav-btn-ai" data-target="section-genai">✨ GenAI</button>
+      </nav>
 
       <div class="header-actions">
-        <div class="header-status-badge">
-          <span class="pulse-dot"></span> SQL Server Live
+        <!-- Live Status Pill -->
+        <div class="header-status-badge" title="SQL Server 2022 Connected (Latency: 14ms)">
+          <span class="pulse-dot"></span>
+          <span class="status-label">Live</span>
         </div>
+
+        <!-- Primary Run ETL Button -->
         <button id="btn-run-pipeline" class="btn btn-primary btn-pipeline-glow" title="Execute real-time weather ingestion pipeline">
-          <span class="btn-icon">▶</span> Run ETL
+          <span class="btn-icon">▶</span>
+          <span>Run ETL</span>
         </button>
+
+        <!-- Refresh Button -->
         <button id="btn-refresh" class="btn-icon-square" title="Refresh platform data">
           <span>🔄</span>
         </button>
-        <button id="btn-open-cmd" class="btn-cmd-palette" title="Global Quick Actions (Ctrl+K)">
+
+        <!-- Command Palette Pill -->
+        <button id="btn-open-cmd" class="btn-cmd-palette" title="Global Command Palette (Ctrl+K)">
           <span class="cmd-icon">⌘</span>
-          <kbd class="cmd-kbd">Ctrl K</kbd>
+          <kbd class="cmd-kbd">K</kbd>
         </button>
-        <div class="header-refresh-group">
-          <select id="select-auto-refresh" class="header-refresh-select" title="Auto-refresh interval">
+
+        <!-- Auto Sync Control -->
+        <div class="header-refresh-group" title="Auto-refresh interval">
+          <select id="select-auto-refresh" class="header-refresh-select" aria-label="Auto refresh rate">
             <option value="0">Sync: Off</option>
-            <option value="30">30s</option>
-            <option value="60">1m</option>
-            <option value="300">5m</option>
+            <option value="30">Sync: 30s</option>
+            <option value="60">Sync: 1m</option>
+            <option value="300">Sync: 5m</option>
           </select>
-          <span class="refresh-countdown-badge" id="badge-refresh-countdown" title="Live sync countdown">Idle</span>
+          <span class="refresh-countdown-badge" id="badge-refresh-countdown">Idle</span>
         </div>
-        <a href="/json-to-ui" class="header-portal-btn" target="_blank" title="Universal JSON to UI Studio">✨ Studio</a>
-        <a href="/links" class="header-portal-btn" target="_blank" title="All Links Directory">🌐 Links</a>
-        <a href="/docs" class="header-portal-btn" target="_blank" title="Swagger API Documentation">📖 Docs</a>
+
+        <!-- Consolidated Portals Dropdown -->
+        <div class="nav-dropdown" id="dropdown-portals">
+          <button class="header-portal-btn nav-dropdown-trigger" id="btn-portals-toggle" type="button" aria-haspopup="true">
+            <span>⚡ Portals</span>
+            <span class="dropdown-arrow">▾</span>
+          </button>
+          <div class="nav-dropdown-menu" id="portals-menu">
+            <a href="/json-to-ui" target="_blank" class="nav-dropdown-item">
+              <span class="dropdown-item-icon">✨</span>
+              <div class="dropdown-item-info">
+                <span class="dropdown-item-title">JSON-to-UI Studio</span>
+                <span class="dropdown-item-sub">Universal browser UI renderer</span>
+              </div>
+            </a>
+            <a href="/links" target="_blank" class="nav-dropdown-item">
+              <span class="dropdown-item-icon">🌐</span>
+              <div class="dropdown-item-info">
+                <span class="dropdown-item-title">All Links Directory</span>
+                <span class="dropdown-item-sub">Catalog of warehouse API endpoints</span>
+              </div>
+            </a>
+            <a href="/docs" target="_blank" class="nav-dropdown-item">
+              <span class="dropdown-item-icon">📖</span>
+              <div class="dropdown-item-info">
+                <span class="dropdown-item-title">Swagger OpenAPI Docs</span>
+                <span class="dropdown-item-sub">Interactive schema &amp; test harness</span>
+              </div>
+            </a>
+            <a href="/redoc" target="_blank" class="nav-dropdown-item">
+              <span class="dropdown-item-icon">📑</span>
+              <div class="dropdown-item-info">
+                <span class="dropdown-item-title">ReDoc Specification</span>
+                <span class="dropdown-item-sub">Clean reference documentation</span>
+              </div>
+            </a>
+            <a href="/health" target="_blank" class="nav-dropdown-item">
+              <span class="dropdown-item-icon">💚</span>
+              <div class="dropdown-item-info">
+                <span class="dropdown-item-title">System Health Check</span>
+                <span class="dropdown-item-sub">Warehouse &amp; server latency</span>
+              </div>
+            </a>
+          </div>
+        </div>
       </div>
     </header>
 

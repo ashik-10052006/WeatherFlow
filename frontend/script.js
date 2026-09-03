@@ -51,8 +51,26 @@ document.addEventListener("DOMContentLoaded", () => {
   try { setupAutoRefresh(); } catch (e) { console.error("setupAutoRefresh:", e); }
   try { setupStationDrawer(); } catch (e) { console.error("setupStationDrawer:", e); }
   try { setupHistoryTableSortingAndExport(); } catch (e) { console.error("setupHistoryTableSortingAndExport:", e); }
+  try { setupPortalsDropdown(); } catch (e) { console.error("setupPortalsDropdown:", e); }
   fetchAllData();
 });
+
+function setupPortalsDropdown() {
+  const dropdown = document.getElementById("dropdown-portals");
+  const trigger = document.getElementById("btn-portals-toggle");
+  if (!dropdown || !trigger) return;
+
+  trigger.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!dropdown.contains(e.target)) {
+      dropdown.classList.remove("open");
+    }
+  });
+}
 
 function setupNavigation() {
   const navButtons = document.querySelectorAll(".nav-btn");
