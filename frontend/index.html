@@ -131,19 +131,42 @@
           <div class="loading-state">Loading latest weather observations...</div>
         </div>
 
+        <!-- Chart Analytics Controls Bar -->
+        <div class="chart-controls-panel">
+          <div class="chart-controls-left">
+            <div class="chart-controls-heading">📊 Meteorological Analytics & Visualizer</div>
+            <div class="chart-controls-subtext">Switch between current ranked station comparisons and 7-day trendlines</div>
+          </div>
+          <div class="chart-controls-right">
+            <div class="view-mode-tabs">
+              <button class="view-tab-btn active" id="btn-chart-mode-compare">⚡ Station Ranking</button>
+              <button class="view-tab-btn" id="btn-chart-mode-trend">📈 7-Day Trend</button>
+            </div>
+            <select id="select-chart-city" class="form-control chart-city-select hidden">
+              <option value="ALL">🌐 All Stations (Warehouse Avg)</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Dashboard Charts Row -->
         <div class="charts-row">
           <div class="chart-container">
-            <div class="panel-header">
-              <h3>Temperature Trend (Past 7 Days)</h3>
+            <div class="panel-header flex-between">
+              <h3 id="heading-chart-temp">Temperature Ranking by Station (°C)</h3>
+              <span class="badge" id="badge-chart-temp-mode">Ranked View</span>
             </div>
-            <canvas id="chart-temp-trend"></canvas>
+            <div class="chart-canvas-wrapper">
+              <canvas id="chart-temp-trend"></canvas>
+            </div>
           </div>
           <div class="chart-container">
-            <div class="panel-header">
-              <h3>Humidity Trend (Past 7 Days)</h3>
+            <div class="panel-header flex-between">
+              <h3 id="heading-chart-humidity">Humidity Levels by Station (%)</h3>
+              <span class="badge" id="badge-chart-humidity-mode">Ranked View</span>
             </div>
-            <canvas id="chart-humidity-trend"></canvas>
+            <div class="chart-canvas-wrapper">
+              <canvas id="chart-humidity-trend"></canvas>
+            </div>
           </div>
         </div>
       </section>

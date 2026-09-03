@@ -16,6 +16,10 @@ const state = {
   latestWeather: [],
   locations: [],
   pipelineRuns: [],
+  temperatureTrend: [],
+  humidityTrend: [],
+  chartMode: "RANKED", // "RANKED" or "TREND"
+  selectedChartCity: "ALL",
 };
 
 // ============================================================================
@@ -76,6 +80,34 @@ function setupActions() {
 
   // Dynamic City Search Setup
   setupCitySearch();
+
+  // Chart Visualizer Mode Toggles
+  const btnRanked = document.getElementById("btn-chart-mode-compare");
+  const btnTrend = document.getElementById("btn-chart-mode-trend");
+  const selectChartCity = document.getElementById("select-chart-city");
+
+  if (btnRanked && btnTrend && selectChartCity) {
+    btnRanked.addEventListener("click", () => {
+      btnRanked.classList.add("active");
+      btnTrend.classList.remove("active");
+      selectChartCity.classList.add("hidden");
+      state.chartMode = "RANKED";
+      renderCharts();
+    });
+
+    btnTrend.addEventListener("click", () => {
+      btnTrend.classList.add("active");
+      btnRanked.classList.remove("active");
+      selectChartCity.classList.remove("hidden");
+      state.chartMode = "TREND";
+      renderCharts();
+    });
+
+    selectChartCity.addEventListener("change", (e) => {
+      state.selectedChartCity = e.target.value;
+      renderCharts();
+    });
+  }
 }
 
 // ============================================================================
@@ -213,6 +245,8 @@ async function fetchLatestWeather() {
       })
       .join("");
 
+    populateChartCityDropdown();
+    renderCharts();
     renderCityDistributionChart(data);
   } catch (e) {
     console.error("fetchLatestWeather failed:", e);
@@ -224,7 +258,8 @@ async function fetchTemperatureTrend() {
     const res = await fetch(`${API_BASE}/api/analytics/temperature-trend?days=7`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    renderTemperatureChart(data);
+    state.temperatureTrend = data;
+    renderCharts();
   } catch (e) {
     console.error("fetchTemperatureTrend failed:", e);
   }
@@ -235,7 +270,8 @@ async function fetchHumidityTrend() {
     const res = await fetch(`${API_BASE}/api/analytics/humidity-trend?days=7`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    renderHumidityChart(data);
+    state.humidityTrend = data;
+    renderCharts();
   } catch (e) {
     console.error("fetchHumidityTrend failed:", e);
   }
@@ -441,106 +477,342 @@ function showAlert(msg, type = "info") {
 // ============================================================================
 // Chart.js Visualizations
 // ============================================================================
-function renderTemperatureChart(trendData) {
-  const ctx = document.getElementById("chart-temp-trend");
-  if (!ctx) return;
+function populateChartCityDropdown() {
+  const select = document.getElementById("select-chart-city");
+  if (!select) return;
 
-  if (tempTrendChart) tempTrendChart.destroy();
+  const currentVal = select.value;
+  const cities = [...new Set((state.latestWeather || []).map((c) => c.city_name))].sort();
 
-  // If no trend data yet
-  if (!trendData || trendData.length === 0) {
-    return;
+  let opts = '<option value="ALL">🌐 All Stations (Warehouse Avg)</option>';
+  opts += cities.map((c) => `<option value="${c}">${c}</option>`).join("");
+  select.innerHTML = opts;
+
+  if (cities.includes(currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.value = "ALL";
+    state.selectedChartCity = "ALL";
   }
-
-  // Group by date or city
-  const labels = [...new Set(trendData.map((d) => d.date))];
-  const cities = [...new Set(trendData.map((d) => d.city_name))];
-
-  const colors = [
-    "#3b82f6", "#10b981", "#f97316", "#8b5cf6",
-    "#06b6d4", "#ec4899", "#eab308", "#14b8a6",
-  ];
-
-  const datasets = cities.map((city, idx) => {
-    const cityPoints = trendData.filter((d) => d.city_name === city);
-    const dataMap = {};
-    cityPoints.forEach((p) => (dataMap[p.date] = p.avg_temperature));
-
-    return {
-      label: city,
-      data: labels.map((dt) => dataMap[dt] ?? null),
-      borderColor: colors[idx % colors.length],
-      backgroundColor: colors[idx % colors.length] + "20",
-      tension: 0.3,
-      fill: false,
-    };
-  });
-
-  tempTrendChart = new Chart(ctx, {
-    type: "line",
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: "#94a3b8" } },
-      },
-      scales: {
-        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } },
-        y: {
-          ticks: { color: "#64748b", callback: (val) => `${val}°C` },
-          grid: { color: "rgba(255,255,255,0.05)" },
-        },
-      },
-    },
-  });
 }
 
-function renderHumidityChart(trendData) {
-  const ctx = document.getElementById("chart-humidity-trend");
-  if (!ctx) return;
+function renderCharts() {
+  if (state.chartMode === "RANKED") {
+    renderRankedCharts();
+  } else {
+    renderTrendCharts();
+  }
+}
 
-  if (humidityTrendChart) humidityTrendChart.destroy();
-  if (!trendData || trendData.length === 0) return;
+function renderRankedCharts() {
+  const hTemp = document.getElementById("heading-chart-temp");
+  const bTemp = document.getElementById("badge-chart-temp-mode");
+  const hHum = document.getElementById("heading-chart-humidity");
+  const bHum = document.getElementById("badge-chart-humidity-mode");
 
-  const labels = [...new Set(trendData.map((d) => d.date))];
-  const cities = [...new Set(trendData.map((d) => d.city_name))];
+  if (hTemp) hTemp.textContent = "Current Temperature by Station (°C)";
+  if (bTemp) bTemp.textContent = "Ranked Comparison";
+  if (hHum) hHum.textContent = "Relative Humidity by Station (%)";
+  if (bHum) bHum.textContent = "Ranked Comparison";
 
-  const colors = ["#06b6d4", "#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444"];
+  const data = state.latestWeather || [];
+  if (data.length === 0) return;
 
-  const datasets = cities.map((city, idx) => {
-    const cityPoints = trendData.filter((d) => d.city_name === city);
-    const dataMap = {};
-    cityPoints.forEach((p) => (dataMap[p.date] = p.avg_humidity));
+  // 1. Temperature Chart (Ranked Horizontal Bars from Hottest to Coolest)
+  const sortedTemp = [...data].sort((a, b) => (b.temperature_c ?? 0) - (a.temperature_c ?? 0));
+  const tempLabels = sortedTemp.map((d) => d.city_name);
+  const tempValues = sortedTemp.map((d) => d.temperature_c);
 
-    return {
-      label: city,
-      data: labels.map((dt) => dataMap[dt] ?? null),
-      borderColor: colors[idx % colors.length],
-      backgroundColor: colors[idx % colors.length] + "33",
-      borderWidth: 1.5,
-    };
+  const tempColors = tempValues.map((t) => {
+    if (t >= 32) return "rgba(244, 63, 94, 0.85)"; // Hot Rose
+    if (t >= 26) return "rgba(245, 158, 11, 0.85)"; // Warm Amber
+    if (t >= 20) return "rgba(6, 182, 212, 0.85)"; // Mild Cyan
+    return "rgba(59, 130, 246, 0.85)"; // Cool Blue
   });
 
-  humidityTrendChart = new Chart(ctx, {
-    type: "bar",
-    data: { labels, datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: "#94a3b8" } },
+  const ctxTemp = document.getElementById("chart-temp-trend");
+  if (ctxTemp) {
+    if (tempTrendChart) tempTrendChart.destroy();
+    tempTrendChart = new Chart(ctxTemp, {
+      type: "bar",
+      data: {
+        labels: tempLabels,
+        datasets: [
+          {
+            label: "Temperature (°C)",
+            data: tempValues,
+            backgroundColor: tempColors,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.65,
+            categoryPercentage: 0.85,
+          },
+        ],
       },
-      scales: {
-        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } },
-        y: {
-          max: 100,
-          ticks: { color: "#64748b", callback: (val) => `${val}%` },
-          grid: { color: "rgba(255,255,255,0.05)" },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            titleColor: "#ffffff",
+            bodyColor: "#f1f5f9",
+            borderColor: "rgba(255, 255, 255, 0.1)",
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: (ctx) => ` Temperature: ${ctx.parsed.x}°C`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#94a3b8", callback: (val) => `${val}°C` },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+          },
+          y: {
+            ticks: { color: "#f1f5f9", font: { weight: "600", size: 12 } },
+            grid: { display: false },
+          },
         },
       },
-    },
+    });
+  }
+
+  // 2. Humidity Chart (Ranked Horizontal Bars from Most Humid to Drier)
+  const sortedHum = [...data].sort((a, b) => (b.humidity_percent ?? 0) - (a.humidity_percent ?? 0));
+  const humLabels = sortedHum.map((d) => d.city_name);
+  const humValues = sortedHum.map((d) => d.humidity_percent);
+
+  const humColors = humValues.map((h) => {
+    if (h >= 75) return "rgba(56, 189, 248, 0.85)"; // Sky Blue
+    if (h >= 50) return "rgba(6, 182, 212, 0.85)"; // Cyan
+    return "rgba(99, 102, 241, 0.85)"; // Indigo
   });
+
+  const ctxHum = document.getElementById("chart-humidity-trend");
+  if (ctxHum) {
+    if (humidityTrendChart) humidityTrendChart.destroy();
+    humidityTrendChart = new Chart(ctxHum, {
+      type: "bar",
+      data: {
+        labels: humLabels,
+        datasets: [
+          {
+            label: "Humidity (%)",
+            data: humValues,
+            backgroundColor: humColors,
+            borderRadius: 8,
+            borderSkipped: false,
+            barPercentage: 0.65,
+            categoryPercentage: 0.85,
+          },
+        ],
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            titleColor: "#ffffff",
+            bodyColor: "#f1f5f9",
+            borderColor: "rgba(255, 255, 255, 0.1)",
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: (ctx) => ` Relative Humidity: ${ctx.parsed.x}%`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            max: 100,
+            ticks: { color: "#94a3b8", callback: (val) => `${val}%` },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+          },
+          y: {
+            ticks: { color: "#f1f5f9", font: { weight: "600", size: 12 } },
+            grid: { display: false },
+          },
+        },
+      },
+    });
+  }
+}
+
+function renderTrendCharts() {
+  const trend = state.temperatureTrend || [];
+  const humTrend = state.humidityTrend || [];
+  if (trend.length === 0) return;
+
+  const hTemp = document.getElementById("heading-chart-temp");
+  const bTemp = document.getElementById("badge-chart-temp-mode");
+  const hHum = document.getElementById("heading-chart-humidity");
+  const bHum = document.getElementById("badge-chart-humidity-mode");
+
+  const selected = state.selectedChartCity || "ALL";
+
+  let dates = [];
+  let tempPoints = [];
+  let humPoints = [];
+
+  if (selected === "ALL") {
+    if (hTemp) hTemp.textContent = "Warehouse Average Temperature (Past 7 Days)";
+    if (bTemp) bTemp.textContent = "Global 7-Day Trend";
+    if (hHum) hHum.textContent = "Warehouse Average Humidity (Past 7 Days)";
+    if (bHum) bHum.textContent = "Global 7-Day Trend";
+
+    dates = [...new Set(trend.map((d) => d.date))].sort();
+    tempPoints = dates.map((dt) => {
+      const match = trend.filter((d) => d.date === dt);
+      const sum = match.reduce((a, b) => a + (b.avg_temperature || 0), 0);
+      return match.length > 0 ? parseFloat((sum / match.length).toFixed(1)) : null;
+    });
+
+    humPoints = dates.map((dt) => {
+      const match = humTrend.filter((d) => d.date === dt);
+      const sum = match.reduce((a, b) => a + (b.avg_humidity || 0), 0);
+      return match.length > 0 ? Math.round(sum / match.length) : null;
+    });
+  } else {
+    if (hTemp) hTemp.textContent = `${selected} — 7-Day Temperature Trend (°C)`;
+    if (bTemp) bTemp.textContent = "Single Station";
+    if (hHum) hHum.textContent = `${selected} — 7-Day Humidity Trend (%)`;
+    if (bHum) bHum.textContent = "Single Station";
+
+    const filteredTemp = trend.filter((d) => d.city_name === selected).sort((a, b) => a.date.localeCompare(b.date));
+    const filteredHum = humTrend.filter((d) => d.city_name === selected).sort((a, b) => a.date.localeCompare(b.date));
+
+    dates = filteredTemp.map((d) => d.date);
+    tempPoints = filteredTemp.map((d) => d.avg_temperature);
+    humPoints = filteredHum.map((d) => d.avg_humidity);
+  }
+
+  // Format date labels: "Aug 28", "Aug 29", etc.
+  const formattedDates = dates.map((dt) => {
+    try {
+      const parts = dt.split("-");
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      }
+      return dt;
+    } catch {
+      return dt;
+    }
+  });
+
+  // 1. Temperature Line Chart (Smooth Area Spline)
+  const ctxTemp = document.getElementById("chart-temp-trend");
+  if (ctxTemp) {
+    if (tempTrendChart) tempTrendChart.destroy();
+    tempTrendChart = new Chart(ctxTemp, {
+      type: "line",
+      data: {
+        labels: formattedDates,
+        datasets: [
+          {
+            label: "Average Temperature (°C)",
+            data: tempPoints,
+            borderColor: "#38bdf8",
+            backgroundColor: "rgba(56, 189, 248, 0.15)",
+            borderWidth: 3,
+            fill: true,
+            tension: 0.35,
+            pointBackgroundColor: "#0284c7",
+            pointBorderColor: "#38bdf8",
+            pointRadius: 5,
+            pointHoverRadius: 8,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            titleColor: "#ffffff",
+            bodyColor: "#f1f5f9",
+            borderColor: "rgba(255, 255, 255, 0.1)",
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: (ctx) => ` Temp: ${ctx.parsed.y}°C`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#94a3b8" },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+          },
+          y: {
+            ticks: { color: "#94a3b8", callback: (val) => `${val}°C` },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+          },
+        },
+      },
+    });
+  }
+
+  // 2. Humidity Bar Chart (Spacious Daily Bars)
+  const ctxHum = document.getElementById("chart-humidity-trend");
+  if (ctxHum) {
+    if (humidityTrendChart) humidityTrendChart.destroy();
+    humidityTrendChart = new Chart(ctxHum, {
+      type: "bar",
+      data: {
+        labels: formattedDates,
+        datasets: [
+          {
+            label: "Average Humidity (%)",
+            data: humPoints,
+            backgroundColor: "rgba(6, 182, 212, 0.65)",
+            borderColor: "#06b6d4",
+            borderWidth: 1.5,
+            borderRadius: 6,
+            barPercentage: 0.5,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "rgba(15, 23, 42, 0.95)",
+            titleColor: "#ffffff",
+            bodyColor: "#f1f5f9",
+            borderColor: "rgba(255, 255, 255, 0.1)",
+            borderWidth: 1,
+            padding: 10,
+            callbacks: {
+              label: (ctx) => ` Humidity: ${ctx.parsed.y}%`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: { color: "#94a3b8" },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+          },
+          y: {
+            max: 100,
+            ticks: { color: "#94a3b8", callback: (val) => `${val}%` },
+            grid: { color: "rgba(255, 255, 255, 0.05)" },
+          },
+        },
+      },
+    });
+  }
 }
 
 function renderCityDistributionChart(latestData) {
