@@ -19,29 +19,30 @@
         <div class="brand-icon">⚡</div>
         <div class="brand-text">
           <span class="brand-title">WEATHERDATA</span>
-          <span class="brand-subtitle">Data Warehouse & Analytics</span>
+          <span class="brand-subtitle">Warehouse & Analytics</span>
         </div>
       </div>
       
-      <nav class="nav-links">
+      <div class="nav-pill-group">
         <button class="nav-btn active" data-target="section-dashboard">Dashboard</button>
         <button class="nav-btn" data-target="section-history">Weather History</button>
         <button class="nav-btn" data-target="section-analytics">Analytics Trends</button>
         <button class="nav-btn" data-target="section-pipeline">Pipeline Monitor</button>
         <button class="nav-btn" data-target="section-genai">🤖 GenAI Assistant</button>
-        <a href="/json-to-ui" class="nav-btn" style="text-decoration: none;" target="_blank">✨ JSON to UI</a>
-        <a href="/links" class="nav-btn" style="text-decoration: none;" target="_blank">🌐 All Links</a>
-      </nav>
+      </div>
 
       <div class="header-actions">
+        <a href="/json-to-ui" class="header-portal-btn" target="_blank" title="Universal JSON to UI Studio">✨ Studio</a>
+        <a href="/links" class="header-portal-btn" target="_blank" title="All Links Directory">🌐 Links</a>
+        <a href="/docs" class="header-portal-btn" target="_blank" title="Swagger API Documentation">📖 Docs</a>
         <div class="header-status-badge">
           <span class="pulse-dot"></span> SQL Server Live
         </div>
-        <button id="btn-run-pipeline" class="btn btn-primary">
-          <span class="btn-icon">▶</span> Run ETL Pipeline
+        <button id="btn-run-pipeline" class="btn btn-primary btn-pipeline-glow">
+          <span class="btn-icon">▶</span> Run ETL
         </button>
-        <button id="btn-refresh" class="btn btn-secondary" title="Refresh data">
-          <span class="btn-icon">🔄</span> Refresh
+        <button id="btn-refresh" class="btn-icon-square" title="Refresh data">
+          <span>🔄</span>
         </button>
       </div>
     </header>
@@ -56,24 +57,29 @@
       <section id="section-dashboard" class="content-section active">
         <!-- Dynamic Global City Search Panel -->
         <div class="city-search-panel">
-          <div class="search-header">
-            <div class="search-title">🌍 Dynamic City Weather Search & Ingestion</div>
-            <div class="search-subtitle">Type any city worldwide to query live weather and persist observations into SQL Server automatically.</div>
+          <div class="search-top-row">
+            <div>
+              <div class="search-title">🌍 Dynamic Global Weather Search & Live Ingestion</div>
+              <div class="search-subtitle">Query real-time meteorological observations for any worldwide city and persist to SQL Server.</div>
+            </div>
           </div>
-          <div class="input-group">
-            <input type="text" id="input-city-search" class="form-control search-input" placeholder="Search any city e.g. Dubai, Singapore, Toronto, Berlin, Cairo, Sydney...">
-            <button id="btn-search-city" class="btn btn-primary">
-              <span class="btn-icon">🔍</span> Search & Ingest
+          <div class="search-capsule">
+            <span class="search-capsule-icon">🔎</span>
+            <input type="text" id="input-city-search" class="search-capsule-input" placeholder="Search any city e.g. Dubai, Singapore, Toronto, Berlin, Cairo, Sydney...">
+            <button id="btn-search-city" class="btn-search-capsule">
+              <span>Search & Ingest</span> &rarr;
             </button>
           </div>
-          <div class="prompt-chips">
-            <span>Popular Cities:</span>
-            <button class="city-chip-btn" data-city="Dubai">Dubai</button>
-            <button class="city-chip-btn" data-city="Singapore">Singapore</button>
-            <button class="city-chip-btn" data-city="Toronto">Toronto</button>
-            <button class="city-chip-btn" data-city="Berlin">Berlin</button>
-            <button class="city-chip-btn" data-city="Cairo">Cairo</button>
-            <button class="city-chip-btn" data-city="Seoul">Seoul</button>
+          <div class="popular-cities-row">
+            <span class="popular-label">Popular Stations:</span>
+            <div class="popular-chips">
+              <button class="city-chip-btn" data-city="Dubai">Dubai</button>
+              <button class="city-chip-btn" data-city="Singapore">Singapore</button>
+              <button class="city-chip-btn" data-city="Toronto">Toronto</button>
+              <button class="city-chip-btn" data-city="Berlin">Berlin</button>
+              <button class="city-chip-btn" data-city="Cairo">Cairo</button>
+              <button class="city-chip-btn" data-city="Seoul">Seoul</button>
+            </div>
           </div>
 
           <!-- Dynamic Result Box -->
@@ -82,39 +88,47 @@
 
         <!-- KPI Metric Cards Grid -->
         <div class="kpi-grid">
-          <div class="kpi-card">
-            <div class="kpi-icon blue">📊</div>
-            <div class="kpi-info">
-              <div class="kpi-label">Total Observations</div>
-              <div class="kpi-value" id="kpi-total-records">--</div>
-              <div class="kpi-subtext" id="kpi-cities-count">-- Cities Monitored</div>
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-top">
+              <span class="kpi-label">Total Observations</span>
+              <div class="kpi-icon-badge">📊</div>
+            </div>
+            <div class="kpi-value" id="kpi-total-records">--</div>
+            <div class="kpi-footer">
+              <span class="kpi-pill" id="kpi-cities-count">-- Cities Monitored</span>
             </div>
           </div>
 
-          <div class="kpi-card">
-            <div class="kpi-icon orange">🌡️</div>
-            <div class="kpi-info">
-              <div class="kpi-label">Latest Avg Temp</div>
-              <div class="kpi-value" id="kpi-latest-temp">--°C</div>
-              <div class="kpi-subtext" id="kpi-temp-range">Min: --°C | Max: --°C</div>
+          <div class="kpi-card kpi-orange">
+            <div class="kpi-top">
+              <span class="kpi-label">Latest Avg Temp</span>
+              <div class="kpi-icon-badge">🌡️</div>
+            </div>
+            <div class="kpi-value" id="kpi-latest-temp">--°C</div>
+            <div class="kpi-footer">
+              <span class="kpi-pill" id="kpi-temp-range">Min: --°C | Max: --°C</span>
             </div>
           </div>
 
-          <div class="kpi-card">
-            <div class="kpi-icon cyan">💧</div>
-            <div class="kpi-info">
-              <div class="kpi-label">Average Humidity</div>
-              <div class="kpi-value" id="kpi-avg-humidity">--%</div>
-              <div class="kpi-subtext">Across All Stations</div>
+          <div class="kpi-card kpi-cyan">
+            <div class="kpi-top">
+              <span class="kpi-label">Average Humidity</span>
+              <div class="kpi-icon-badge">💧</div>
+            </div>
+            <div class="kpi-value" id="kpi-avg-humidity">--%</div>
+            <div class="kpi-footer">
+              <span class="kpi-pill">Across Monitored Stations</span>
             </div>
           </div>
 
-          <div class="kpi-card">
-            <div class="kpi-icon purple">🚀</div>
-            <div class="kpi-info">
-              <div class="kpi-label">Pipeline Status</div>
-              <div class="kpi-value" id="kpi-pipeline-status">--</div>
-              <div class="kpi-subtext" id="kpi-last-run-time">Last run: --</div>
+          <div class="kpi-card kpi-emerald">
+            <div class="kpi-top">
+              <span class="kpi-label">Pipeline Health</span>
+              <div class="kpi-icon-badge">🚀</div>
+            </div>
+            <div class="kpi-value" id="kpi-pipeline-status">--</div>
+            <div class="kpi-footer">
+              <span class="kpi-pill" id="kpi-last-run-time">Last run: --</span>
             </div>
           </div>
         </div>

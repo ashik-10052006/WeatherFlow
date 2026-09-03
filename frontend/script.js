@@ -279,6 +279,33 @@ function getWeatherVisuals(conditionText) {
   return { icon: "☁️", cssClass: "condition-cloudy" };
 }
 
+function formatFriendlyTime(dateStr) {
+  if (!dateStr) return "Just synced";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "Recently synced";
+    const now = new Date();
+    const diffMs = now - d;
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins >= 0 && diffMins < 60) {
+      return diffMins <= 1 ? "Just now" : `${diffMins}m ago`;
+    }
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch (e) {
+    return "Recently synced";
+  }
+}
+
+function quickFilterCity(cityName) {
+  const historyBtn = document.querySelector('[data-target="section-history"]');
+  if (historyBtn) historyBtn.click();
+  const searchInput = document.getElementById("input-history-search");
+  if (searchInput) {
+    searchInput.value = cityName;
+    filterHistoryTableClientSide(cityName.toLowerCase());
+  }
+}
+
 async function fetchLatestWeather() {
   try {
     const res = await fetch(`${API_BASE}/api/weather/latest`);
@@ -301,23 +328,37 @@ async function fetchLatestWeather() {
         const wind = item.wind_speed_kmh !== null ? `${item.wind_speed_kmh} km/h` : "--";
         const cond = item.weather_condition || "Unknown";
         const visuals = getWeatherVisuals(cond);
-        const time = item.recorded_at ? new Date(item.recorded_at).toUTCString() : "Pending sync";
+        const friendlyTime = formatFriendlyTime(item.recorded_at);
 
         return `
           <div class="weather-city-card ${visuals.cssClass}" data-city="${item.city_name.toLowerCase()}">
             <div class="card-top">
-              <div>
+              <div class="card-location-meta">
                 <div class="city-title">${item.city_name}</div>
-                <div class="country-title">${item.country || ""}</div>
+                <div class="country-pill">${item.country || "Global"}</div>
               </div>
               <div class="temp-large">${temp}</div>
             </div>
-            <div class="weather-condition-tag">${visuals.icon} ${cond}</div>
-            <div class="weather-details-grid">
-              <div class="weather-detail-item">Humidity: <span>${hum}</span></div>
-              <div class="weather-detail-item">Wind: <span>${wind}</span></div>
+            
+            <div class="card-mid">
+              <span class="weather-condition-pill">${visuals.icon} ${cond}</span>
             </div>
-            <div class="card-recorded-time">🕒 ${time}</div>
+
+            <div class="weather-details-chips">
+              <div class="weather-detail-chip">
+                <span class="chip-val">${hum}</span>
+                <span class="chip-label">💧 Humidity</span>
+              </div>
+              <div class="weather-detail-chip">
+                <span class="chip-val">${wind}</span>
+                <span class="chip-label">💨 Wind</span>
+              </div>
+            </div>
+
+            <div class="card-bottom">
+              <div class="card-recorded-time"><span class="pulse-dot-small"></span> Synced ${friendlyTime}</div>
+              <button class="card-explore-btn" onclick="quickFilterCity('${item.city_name}')" title="Filter history for ${item.city_name}">History &rarr;</button>
+            </div>
           </div>
         `;
       })
@@ -1242,6 +1283,6 @@ async function searchAndIngestCity(cityName) {
     showAlert(`City Search: ${err.message}`, "error");
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon">🔍</span> Search & Ingest';
+    btn.innerHTML = '<span>Search & Ingest</span> &rarr;';
   }
 }
