@@ -106,25 +106,38 @@ if frontend_dir.exists():
 def root_endpoint(request: Request):
     """
     Root endpoint:
-    - Returns interactive HTML Dashboard for browser visits (text/html).
-    - Returns health check JSON for API requests (application/json or curl).
+    - Serves the production HTML Dashboard by default for all visits.
+    - If explicitly requested via ?format=json or pure application/json accept, returns health check JSON.
     """
+    format_param = request.query_params.get("format", "").lower()
     accept_header = request.headers.get("accept", "")
     index_file = frontend_dir / "index.html"
 
-    # If browser requests HTML and index.html exists, serve the dashboard
-    if "text/html" in accept_header and index_file.exists():
+    # Only return JSON if explicitly requested via ?format=json
+    if format_param == "json" or ("application/json" in accept_header and "text/html" not in accept_header and "*/*" not in accept_header):
+        db_status = test_connection()
+        return {
+            "status": "healthy" if db_status.get("connected") else "degraded",
+            "service": "WeatherData Platform",
+            "version": "1.0.0",
+            "database": db_status,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+
+    # By default, ALWAYS serve the interactive dashboard
+    if index_file.exists():
         return FileResponse(index_file)
 
-    # Otherwise return Health Check JSON
-    db_status = test_connection()
-    return {
-        "status": "healthy" if db_status.get("connected") else "degraded",
-        "service": "WeatherData Platform",
-        "version": "1.0.0",
-        "database": db_status,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    }
+    return HTMLResponse("<h1>WeatherData Dashboard</h1><p>index.html not found</p>")
+
+
+@app.get("/dashboard", tags=["Health & WebUI"], include_in_schema=False)
+def dashboard_endpoint():
+    """Explicit /dashboard route serving the interactive HTML dashboard."""
+    index_file = frontend_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(index_file)
+    return HTMLResponse("<h1>WeatherData Dashboard</h1><p>index.html not found</p>")
 
 
 @app.get("/health", tags=["Health & WebUI"])
