@@ -1682,6 +1682,60 @@ function renderTrendCharts() {
   }
 }
 
+function renderCityDistributionChart(latestData) {
+  const ctx = document.getElementById("chart-city-distribution");
+  if (!ctx) return;
+
+  const dataset = (latestData && latestData.length > 0) ? latestData : state.latestWeather;
+  if (!dataset || dataset.length === 0) return;
+  if (cityDistChart) cityDistChart.destroy();
+
+  const labels = dataset.map((d) => d.city_name);
+  const temps = dataset.map((d) => d.temperature_c);
+  const humidities = dataset.map((d) => d.humidity_percent);
+
+  cityDistChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Current Temperature (°C)",
+          data: temps,
+          backgroundColor: "rgba(249, 115, 22, 0.75)",
+          borderColor: "#f97316",
+          borderWidth: 1.5,
+          borderRadius: 4,
+        },
+        {
+          label: "Relative Humidity (%)",
+          data: humidities,
+          backgroundColor: "rgba(6, 182, 212, 0.75)",
+          borderColor: "#06b6d4",
+          borderWidth: 1.5,
+          borderRadius: 4,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: "#cbd5e1" } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? ctx.parsed.y + (ctx.datasetIndex === 0 ? "°C" : "%") : "--"}`,
+          },
+        },
+      },
+      scales: {
+        x: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } },
+        y: { ticks: { color: "#64748b" }, grid: { color: "rgba(255,255,255,0.05)" } },
+      },
+    },
+  });
+}
+
 // ============================================================================
 // Advanced Analytics Suite: Multi-Chart Visualization Engine
 // ============================================================================
@@ -1704,6 +1758,7 @@ async function fetchAdvancedAnalytics() {
       badge.textContent = `${correlationData.length}+ Observations Ingested`;
     }
 
+    renderCityDistributionChart(state.latestWeather);
     renderConditionDonut(conditions);
     renderStationPolar(cityMetrics);
     renderMultiStationTrend(trendData);
