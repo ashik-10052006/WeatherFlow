@@ -3,11 +3,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from backend.config import settings
 from backend.database import test_connection
+from backend.json_to_ui import generate_json_to_ui_html
 from backend.routes.weather_routes import router as weather_router
 from backend.routes.analytics_routes import router as analytics_router
 from backend.routes.pipeline_routes import router as pipeline_router
@@ -36,6 +37,57 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def json_to_ui_browser_middleware(request: Request, call_next):
+    """
+    Universal JSON-to-UI Browser Middleware:
+    When a user directly navigates to an API endpoint in their web browser,
+    automatically renders a clean interactive UI instead of raw JSON text.
+    Maintains 100% pure JSON for automated tests, programmatic fetch, curl, and ?format=json.
+    """
+    accept = request.headers.get("accept", "")
+    dest = request.headers.get("sec-fetch-dest", "")
+    mode = request.headers.get("sec-fetch-mode", "")
+    format_param = request.query_params.get("format", "").lower()
+    view_param = request.query_params.get("view", "").lower()
+
+    is_browser = (
+        dest == "document"
+        or mode == "navigate"
+        or ("text/html" in accept and "application/json" not in accept)
+        or view_param == "ui"
+        or format_param == "ui"
+    )
+
+    response = await call_next(request)
+
+    path = request.url.path
+    if (
+        is_browser
+        and format_param != "json"
+        and request.method == "GET"
+        and (path.startswith("/api/") or path == "/health")
+        and response.status_code == 200
+        and "application/json" in response.headers.get("content-type", "")
+    ):
+        try:
+            body = [chunk async for chunk in response.body_iterator]
+            body_bytes = b"".join(body)
+            json_str = body_bytes.decode("utf-8")
+            html_content = generate_json_to_ui_html(
+                path=str(request.url).replace(str(request.base_url).rstrip("/"), ""),
+                json_str=json_str,
+                status_code=response.status_code,
+            )
+            return HTMLResponse(content=html_content, status_code=response.status_code)
+        except Exception as e:
+            logger.error(f"Error converting JSON to UI for {path}: {e}")
+            return Response(content=body_bytes, status_code=response.status_code, headers=dict(response.headers))
+
+    return response
+
 
 # Register API routers
 app.include_router(weather_router)
@@ -130,6 +182,18 @@ def all_links_directory(request: Request):
             "genai_assistant_post": f"{base}/api/genai/ask",
         },
     }
+
+
+@app.get("/json-to-ui", tags=["Health & WebUI"])
+def json_to_ui_studio(request: Request):
+    """
+    Universal JSON-to-UI Studio:
+    Interactive tool to paste any raw JSON and convert it into responsive tables, KPI cards, and CSV export.
+    """
+    studio_file = frontend_dir / "json_to_ui.html"
+    if studio_file.exists():
+        return FileResponse(studio_file)
+    return HTMLResponse("<h1>JSON to UI Studio</h1><p>frontend/json_to_ui.html not found</p>")
 
 
 if __name__ == "__main__":

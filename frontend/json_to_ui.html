@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WEATHERDATA — Universal JSON to UI Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .studio-container {
+      max-width: 1400px;
+      margin: 1.5rem auto 3rem;
+      padding: 0 1.5rem;
+    }
+    .studio-hero {
+      background: linear-gradient(135deg, rgba(20, 31, 54, 0.9), rgba(15, 23, 42, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .studio-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, #38bdf8, #06b6d4, #8b5cf6);
+    }
+    .editor-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    @media (max-width: 900px) {
+      .editor-grid { grid-template-columns: 1fr; }
+    }
+    .editor-card {
+      background: linear-gradient(135deg, #111a2e, #17243c);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .json-textarea {
+      width: 100%;
+      height: 380px;
+      background-color: #080c16;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      color: #38bdf8;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      padding: 1rem;
+      resize: vertical;
+      line-height: 1.5;
+      outline: none;
+    }
+    .json-textarea:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2);
+    }
+    .preset-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+    .preset-btn {
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-secondary);
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-btn:hover {
+      border-color: var(--accent-cyan);
+      color: #ffffff;
+      background-color: rgba(6, 182, 212, 0.1);
+    }
+    .ui-output-panel {
+      background: linear-gradient(135deg, #111a2e, #17243c);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .kpi-mini-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 1rem;
+    }
+    .kpi-mini-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .kpi-mini-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-top: 0.25rem;
+    }
+    .ui-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .ui-table th {
+      padding: 0.75rem 1rem;
+      background: #0f172a;
+      color: var(--text-secondary);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: left;
+    }
+    .ui-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-primary);
+    }
+    .ui-table tr:hover td {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="navbar">
+      <a href="/" class="brand" style="text-decoration: none;">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <span class="brand-title">WEATHERDATA</span>
+          <span class="brand-subtitle">JSON to UI Studio</span>
+        </div>
+      </a>
+      <div class="header-actions">
+        <a href="/" class="btn btn-secondary">Dashboard</a>
+        <a href="/links" class="btn btn-secondary">All Links</a>
+        <a href="/docs" class="btn btn-secondary">Swagger Docs</a>
+      </div>
+    </header>
+
+    <div class="studio-container">
+      <div class="studio-hero">
+        <h1 style="font-size: 2.2rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem;">
+          ✨ Universal JSON to UI Studio
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1rem; max-width: 800px; line-height: 1.6;">
+          Paste or load any raw JSON payload below and click <strong>"Convert to UI"</strong> to transform it into a responsive, interactive data table with live search, KPI metric cards, and CSV export.
+        </p>
+      </div>
+
+      <!-- Studio Editor & Controls -->
+      <div class="editor-card" style="margin-bottom: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+          <div>
+            <span style="font-weight: 700; color: #ffffff;">JSON Input Payload</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">(Paste or load sample)</span>
+          </div>
+          <div class="preset-chips">
+            <button class="preset-btn" id="btn-load-latest">⛅ Load Latest Weather</button>
+            <button class="preset-btn" id="btn-load-summary">📊 Load KPI Summary</button>
+            <button class="preset-btn" id="btn-load-locations">📍 Load Locations</button>
+            <button class="preset-btn" id="btn-load-pipeline">🚀 Load Pipeline Runs</button>
+          </div>
+        </div>
+
+        <textarea id="json-input" class="json-textarea" placeholder="Paste any JSON string or array here..."></textarea>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+          <button id="btn-convert-ui" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-size: 0.95rem;">
+            ▶ Convert JSON to UI
+          </button>
+          <div style="display: flex; gap: 0.75rem;">
+            <button id="btn-format-json" class="btn btn-secondary btn-sm">🎨 Format JSON</button>
+            <button id="btn-clear-json" class="btn btn-secondary btn-sm">🗑️ Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rendered UI Container -->
+      <div id="ui-output-card" class="ui-output-panel">
+        <div class="panel-header flex-between" style="margin-bottom: 1.25rem;">
+          <div>
+            <h2 style="font-size: 1.35rem; font-weight: 700; color: #ffffff;">🖥️ Rendered Interactive UI View</h2>
+            <p id="ui-output-subtitle" style="font-size: 0.82rem; color: var(--text-secondary);">Converted from raw JSON into structured presentation</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button id="btn-export-csv" class="btn btn-secondary btn-sm">📥 Export CSV</button>
+          </div>
+        </div>
+
+        <div id="ui-rendered-result">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div>WEATHERDATA Platform &bull; Universal JSON to UI Engine &bull; Port 8000</div>
+    </footer>
+  </div>
+
+  <script>
+    let currentParsedData = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Load initial sample
+      loadSample('/api/weather/latest');
+
+      // Preset buttons
+      document.getElementById('btn-load-latest').addEventListener('click', () => loadSample('/api/weather/latest'));
+      document.getElementById('btn-load-summary').addEventListener('click', () => loadSample('/api/analytics/summary'));
+      document.getElementById('btn-load-locations').addEventListener('click', () => loadSample('/api/locations'));
+      document.getElementById('btn-load-pipeline').addEventListener('click', () => loadSample('/api/pipeline/runs?limit=10'));
+
+      // Convert button
+      document.getElementById('btn-convert-ui').addEventListener('click', parseAndRenderUI);
+
+      // Format button
+      document.getElementById('btn-format-json').addEventListener('click', () => {
+        try {
+          const val = document.getElementById('json-input').value;
+          const parsed = JSON.parse(val);
+          document.getElementById('json-input').value = JSON.stringify(parsed, null, 2);
+        } catch (e) {
+          alert('Invalid JSON: ' + e.message);
+        }
+      });
+
+      // Clear button
+      document.getElementById('btn-clear-json').addEventListener('click', () => {
+        document.getElementById('json-input').value = '';
+        document.getElementById('ui-rendered-result').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">Paste JSON above to render UI.</div>';
+      });
+
+      // Export CSV
+      document.getElementById('btn-export-csv').addEventListener('click', () => {
+        if (!currentParsedData || !Array.isArray(currentParsedData) || currentParsedData.length === 0) {
+          alert('Export to CSV requires a tabular array dataset.');
+          return;
+        }}
+        const cols = Object.keys(currentParsedData[0]);
+        const csvRows = [cols.join(",")];
+        currentParsedData.forEach(row => {
+          const vals = cols.map(c => {
+            const v = row[c] !== null && row[c] !== undefined ? String(row[c]).replace(/"/g, '""') : "";
+            return `"${v}"`;
+          });
+          csvRows.push(vals.join(","));
+        });
+        const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "json_to_ui_export.csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+    });
+
+    async function loadSample(url) {
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        document.getElementById('json-input').value = JSON.stringify(data, null, 2);
+        currentParsedData = data;
+        renderDataView(data);
+      } catch (err) {
+        console.error('Error loading sample:', err);
+      }
+    }
+
+    function parseAndRenderUI() {
+      const text = document.getElementById('json-input').value.trim();
+      if (!text) {
+        alert('Please paste some JSON to convert!');
+        return;
+      }
+      try {
+        const data = JSON.parse(text);
+        currentParsedData = data;
+        renderDataView(data);
+      } catch (err) {
+        document.getElementById('ui-rendered-result').innerHTML = `
+          <div style="padding: 1.5rem; background: rgba(239, 68, 68, 0.15); border: 1px solid #b91c1c; border-radius: 8px; color: #f87171;">
+            <strong>JSON Syntax Error:</strong> ${err.message}
+          </div>
+        `;
+      }
+    }
+
+    function renderDataView(data) {
+      const container = document.getElementById('ui-rendered-result');
+      const subtitle = document.getElementById('ui-output-subtitle');
+
+      // Case 1: Array of objects
+      if (Array.isArray(data)) {
+        if (data.length === 0) {
+          container.innerHTML = '<div style="padding: 3rem; text-align: center; color: var(--text-muted);">Empty array [] received.</div>';
+          return;
+        }
+
+        subtitle.textContent = `Successfully rendered array of ${data.length} records into interactive table`;
+        const cols = Object.keys(data[0]);
+
+        let html = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div style="font-weight: 600; color: #ffffff;">${data.length} Total Rows</div>
+            <input type="text" id="ui-live-filter" placeholder="🔎 Filter table rows..." style="padding: 0.45rem 0.9rem; background: #080c16; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; font-size: 0.85rem; width: 250px;">
+          </div>
+          <div style="overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+            <table class="ui-table" id="ui-rendered-table">
+              <thead>
+                <tr>${cols.map(c => `<th>${c.replace(/_/g, ' ').toUpperCase()}</th>`).join('')}</tr>
+              </thead>
+              <tbody>
+                ${data.map(row => `
+                  <tr>
+                    ${cols.map(col => {
+                      const val = row[col];
+                      if (val === null || val === undefined) return '<td style="color: var(--text-muted);">--</td>';
+                      if (col.includes('temp')) return `<td><strong style="color: #f59e0b;">${val}°C</strong></td>`;
+                      if (col.includes('hum')) return `<td><span style="color: #06b6d4;">${val}%</span></td>`;
+                      if (col.includes('wind')) return `<td>${val} km/h</td>`;
+                      if (col === 'status') return `<td><span class="badge badge-status">${val}</span></td>`;
+                      if (typeof val === 'object') return `<td>${JSON.stringify(val)}</td>`;
+                      return `<td>${val}</td>`;
+                    }).join('')}
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        container.innerHTML = html;
+
+        // Instant filter listener
+        const filterInput = document.getElementById('ui-live-filter');
+        if (filterInput) {
+          filterInput.addEventListener('input', (e) => {
+            const q = e.target.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#ui-rendered-table tbody tr');
+            rows.forEach(r => {
+              r.style.display = (!q || r.textContent.toLowerCase().includes(q)) ? '' : 'none';
+            });
+          });
+        }
+        return;
+      }
+
+      // Case 2: Object with key-value pairs
+      if (typeof data === 'object' && data !== null) {
+        const entries = Object.entries(data);
+        subtitle.textContent = `Rendered object with ${entries.length} properties`;
+
+        const numEntries = entries.filter(([k, v]) => typeof v === 'number' || (typeof v === 'string' && !isNaN(parseFloat(v)) && !v.includes('-')));
+        let kpiHtml = '';
+        if (numEntries.length > 0) {
+          kpiHtml = `
+            <div class="kpi-row">
+              ${numEntries.slice(0, 6).map(([k, v]) => `
+                <div class="kpi-mini-card">
+                  <div class="kpi-mini-label">${k.replace(/_/g, ' ')}</div>
+                  <div class="kpi-mini-value">${v}</div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+
+        let tableHtml = `
+          <div style="overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;">
+            <table class="ui-table">
+              <thead><tr><th>PROPERTY</th><th>VALUE</th></tr></thead>
+              <tbody>
+                ${entries.map(([k, v]) => `
+                  <tr>
+                    <td><strong>${k.replace(/_/g, ' ').toUpperCase()}</strong></td>
+                    <td>${typeof v === 'object' ? `<pre style="font-family: var(--font-mono); color: #38bdf8;">${JSON.stringify(v, null, 2)}</pre>` : v}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+        container.innerHTML = kpiHtml + tableHtml;
+        return;
+      }
+
+      container.innerHTML = `<div style="padding: 2rem;">${String(data)}</div>`;
+    }
+  </script>
+</body>
+</html>
