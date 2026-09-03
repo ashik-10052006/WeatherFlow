@@ -27,7 +27,7 @@ app = FastAPI(
     description="Production-grade Weather Data Warehouse & ETL Analytics API.",
     version="1.0.0",
     docs_url=None,  # Custom enhanced Swagger UI served at /docs
-    redoc_url="/redoc",
+    redoc_url=None,  # Custom enhanced ReDoc UI served at /redoc
 )
 
 # Enable CORS for frontend clients
@@ -261,6 +261,114 @@ def custom_swagger_docs(request: Request):
     """
     html = html.replace("<body>", f'<body class="swagger-section">{custom_nav}')
 
+    return HTMLResponse(content=html)
+
+
+@app.get("/redoc", tags=["Health & WebUI"], include_in_schema=False)
+def custom_redoc_ui():
+    """
+    Enhanced, High-End Custom ReDoc API Reference:
+    - Sleek dark theme matching WeatherFlow design language.
+    - Custom top navigation bar linking to Dashboard, Swagger, All Links, and JSON to UI.
+    - Deep slate dark background, custom scrollbars, and styled search box.
+    - Auto-expanded responses and alphabetical schema sorting.
+    """
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>WEATHERFLOW &mdash; Technical API Reference &amp; Specifications</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/redoc.css">
+  <link rel="icon" type="image/x-icon" href="https://fastapi.tiangolo.com/img/favicon.png">
+</head>
+<body class="redoc-body">
+  <!-- Top Navigation Header -->
+  <header class="redoc-custom-navbar">
+    <div class="redoc-brand-group">
+      <a href="/" class="redoc-brand">
+        <span class="redoc-brand-icon">⚡</span>
+        <span class="redoc-brand-title">WEATHERFLOW</span>
+      </a>
+      <span class="redoc-badge">SPECIFICATION</span>
+      <span class="redoc-badge-env">PROD</span>
+    </div>
+
+    <nav class="redoc-nav-links">
+      <a href="/" class="redoc-btn primary">🏠 Main Dashboard</a>
+      <a href="/docs" class="redoc-btn accent">📖 Swagger Console</a>
+      <a href="/links" class="redoc-btn">🌐 All Links Directory</a>
+      <a href="/json-to-ui" class="redoc-btn">✨ JSON to UI</a>
+      <a href="/openapi.json" class="redoc-btn outline" target="_blank">⬇ OpenAPI JSON</a>
+    </nav>
+  </header>
+
+  <!-- ReDoc Target Mount Container -->
+  <div id="redoc-container"></div>
+
+  <!-- ReDoc Standalone Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/redoc@2.1.5/bundles/redoc.standalone.js"></script>
+  <script>
+    Redoc.init('/openapi.json', {
+      theme: {
+        colors: {
+          primary: { main: '#38bdf8' },
+          success: { main: '#10b981' },
+          warning: { main: '#f59e0b' },
+          error: { main: '#ef4444' },
+          text: { primary: '#f8fafc', secondary: '#94a3b8' },
+          http: {
+            get: '#38bdf8',
+            post: '#10b981',
+            put: '#f59e0b',
+            delete: '#ef4444'
+          },
+          responses: {
+            success: { color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.08)' },
+            error: { color: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.08)' }
+          }
+        },
+        typography: {
+          fontSize: '14px',
+          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+          headings: {
+            fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+            fontWeight: '700'
+          },
+          code: {
+            fontFamily: "'JetBrains Mono', Consolas, monospace",
+            backgroundColor: '#1e293b',
+            color: '#38bdf8'
+          }
+        },
+        sidebar: {
+          backgroundColor: '#090d16',
+          textColor: '#cbd5e1',
+          activeTextColor: '#38bdf8',
+          width: '290px'
+        },
+        rightPanel: {
+          backgroundColor: '#0b0f19',
+          textColor: '#e2e8f0',
+          width: '42%'
+        },
+        codeBlock: {
+          backgroundColor: '#020617'
+        }
+      },
+      hideDownloadButton: false,
+      expandResponses: '200,201',
+      requiredPropsFirst: true,
+      sortPropsAlphabetically: true,
+      nativeScrollbars: true,
+      pathInMiddlePanel: true
+    }, document.getElementById('redoc-container'));
+  </script>
+</body>
+</html>"""
     return HTMLResponse(content=html)
 
 
