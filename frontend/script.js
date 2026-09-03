@@ -2544,10 +2544,12 @@ function setupCitySearch() {
 async function searchAndIngestCity(cityName) {
   const btn = document.getElementById("btn-search-city");
   const container = document.getElementById("search-result-container");
+  const searchInput = document.getElementById("input-city-search");
+  if (searchInput) searchInput.value = cityName;
 
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-icon">⏳</span> Ingesting...';
-  showAlert(`Searching live weather for ${cityName}...`, "info");
+  showToast(`Searching live weather for ${cityName}...`, "info");
 
   try {
     const res = await fetch(`${API_BASE}/api/weather/search?city=${encodeURIComponent(cityName)}&refresh=true`);
@@ -2587,8 +2589,8 @@ async function searchAndIngestCity(cityName) {
 
     showAlert(`✓ Live weather for ${data.city_name}: ${w.temperature_c}°C, ${w.weather_condition}`, "success");
 
-    // Also update synoptic atmospheric hero card & forecasts
-    fetchSynopticWeather(data.city_name);
+    // Also update synoptic atmospheric hero card & forecasts and record in search history
+    fetchSynopticWeather(data.city_name, true);
 
     // Refresh entire platform data so KPIs, cards, and history update immediately
     await fetchAllData();
@@ -2615,7 +2617,7 @@ async function searchAndIngestCity(cityName) {
 
 let currentSynopticCity = "Chennai";
 
-async function fetchSynopticWeather(query) {
+async function fetchSynopticWeather(query, isManualSearch = false) {
   if (!query) return;
   try {
     const res = await fetch(`${API_BASE}/api/weather/synoptic?q=${encodeURIComponent(query)}&days=5`);
@@ -2625,7 +2627,9 @@ async function fetchSynopticWeather(query) {
 
     renderSynopticUI(data);
     currentSynopticCity = data.location.name;
-    saveSearchHistory(data.location.name);
+    if (isManualSearch) {
+      saveSearchHistory(data.location.name);
+    }
     updateFavoriteButtonState();
     renderFavorites();
   } catch (err) {
@@ -2764,9 +2768,10 @@ function setupMyLocation() {
     const fallbackToIp = async () => {
       try {
         showToast("📍 Resolving location via Network IP...", "info");
-        await fetchSynopticWeather("auto:ip");
-        await fetchAllData();
-        showToast(`✓ Station synchronized to ${currentSynopticCity}!`, "success");
+        await fetchSynopticWeather("auto:ip", true);
+        if (currentSynopticCity) {
+          await searchAndIngestCity(currentSynopticCity);
+        }
       } catch (e) {
         showToast("Could not auto-detect location. Please enter your city in the search box.", "warning");
       } finally {
@@ -2785,9 +2790,10 @@ function setupMyLocation() {
         try {
           const lat = pos.coords.latitude.toFixed(4);
           const lon = pos.coords.longitude.toFixed(4);
-          await fetchSynopticWeather(`${lat},${lon}`);
-          await fetchAllData();
-          showToast(`✓ GPS location synchronized: ${currentSynopticCity}!`, "success");
+          await fetchSynopticWeather(`${lat},${lon}`, true);
+          if (currentSynopticCity) {
+            await searchAndIngestCity(currentSynopticCity);
+          }
         } catch (e) {
           await fallbackToIp();
         } finally {
@@ -2880,7 +2886,7 @@ function renderFavorites() {
   container.querySelectorAll(".fav-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const city = chip.getAttribute("data-city");
-      fetchSynopticWeather(city);
+      searchAndIngestCity(city);
     });
   });
 }
@@ -2888,7 +2894,7 @@ function renderFavorites() {
 function getSearchHistory() {
   try {
     const raw = localStorage.getItem("skycast_history");
-    if (raw === null) return ["Chennai", "Bangalore", "Dubai"];
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (e) {
@@ -2934,7 +2940,7 @@ function renderSearchHistory() {
   container.querySelectorAll(".history-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const city = chip.getAttribute("data-city");
-      fetchSynopticWeather(city);
+      searchAndIngestCity(city);
     });
   });
 }
