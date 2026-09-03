@@ -11,6 +11,7 @@ from backend.database import test_connection
 from backend.routes.weather_routes import router as weather_router
 from backend.routes.analytics_routes import router as analytics_router
 from backend.routes.pipeline_routes import router as pipeline_router
+from backend.routes.genai_routes import router as genai_router
 
 # Configure root logging
 logging.basicConfig(
@@ -40,6 +41,7 @@ app.add_middleware(
 app.include_router(weather_router)
 app.include_router(analytics_router)
 app.include_router(pipeline_router)
+app.include_router(genai_router)
 
 # Mount frontend directory for static assets (CSS, JS)
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"

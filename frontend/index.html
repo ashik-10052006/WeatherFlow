@@ -28,6 +28,7 @@
         <button class="nav-btn" data-target="section-history">Weather History</button>
         <button class="nav-btn" data-target="section-analytics">Analytics Trends</button>
         <button class="nav-btn" data-target="section-pipeline">Pipeline Monitor</button>
+        <button class="nav-btn" data-target="section-genai">🤖 GenAI Assistant</button>
       </nav>
 
       <div class="header-actions">
@@ -231,6 +232,60 @@
                 <tr><td colspan="8" class="loading-cell">Loading pipeline telemetry...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================== -->
+      <!-- SECTION 5: GENAI NATURAL LANGUAGE ASSISTANT -->
+      <!-- =============================================================== -->
+      <section id="section-genai" class="content-section">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <div>
+              <h2>🤖 GenAI Weather Analytics Assistant</h2>
+              <p class="section-desc">Ask questions about weather records in natural language. Generates and executes safe read-only SQL.</p>
+            </div>
+            <span class="badge">Safe Read-Only SQL Engine</span>
+          </div>
+
+          <div class="genai-input-box">
+            <div class="input-group">
+              <input type="text" id="genai-question-input" class="form-control genai-input" placeholder="e.g., Which city has the highest temperature?">
+              <button id="btn-ask-genai" class="btn btn-primary">Ask Assistant</button>
+            </div>
+            <div class="prompt-chips">
+              <span>Try asking:</span>
+              <button class="chip-btn" data-prompt="Which city has the highest temperature?">Hottest City?</button>
+              <button class="chip-btn" data-prompt="Which city has the lowest temperature?">Coldest City?</button>
+              <button class="chip-btn" data-prompt="What is the average humidity across all cities?">Average Humidity?</button>
+              <button class="chip-btn" data-prompt="Which cities have rainy or overcast weather?">Rainy/Cloudy Cities?</button>
+              <button class="chip-btn" data-prompt="Show me the windiest cities">Windiest Cities?</button>
+            </div>
+          </div>
+
+          <div id="genai-response-container" class="genai-response-container hidden">
+            <div class="genai-result-card">
+              <div class="result-header">
+                <h3>💡 Natural Language Explanation</h3>
+              </div>
+              <div class="explanation-box" id="genai-explanation"></div>
+
+              <div class="result-header" style="margin-top: 1.5rem;">
+                <h3>⚙️ Generated Safe SQL Query</h3>
+              </div>
+              <pre class="sql-code-box" id="genai-sql"></pre>
+
+              <div class="result-header" style="margin-top: 1.5rem;">
+                <h3>📊 Executed Results (<span id="genai-row-count">0</span> rows)</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table" id="table-genai-results">
+                  <thead id="thead-genai"></thead>
+                  <tbody id="tbody-genai"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </section>

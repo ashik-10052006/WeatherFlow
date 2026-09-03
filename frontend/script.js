@@ -70,6 +70,9 @@ function setupActions() {
       closeModal();
     }
   });
+
+  // GenAI Assistant Setup
+  setupGenAI();
 }
 
 // ============================================================================
@@ -563,4 +566,88 @@ function renderCityDistributionChart(latestData) {
       },
     },
   });
+}
+
+// ============================================================================
+// GenAI Assistant Functions
+// ============================================================================
+function setupGenAI() {
+  const askBtn = document.getElementById("btn-ask-genai");
+  const input = document.getElementById("genai-question-input");
+  if (!askBtn || !input) return;
+
+  askBtn.addEventListener("click", () => {
+    const q = input.value.trim();
+    if (q) askGenAIQuestion(q);
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const q = input.value.trim();
+      if (q) askGenAIQuestion(q);
+    }
+  });
+
+  // Chip buttons
+  document.querySelectorAll(".chip-btn").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const promptText = chip.getAttribute("data-prompt");
+      input.value = promptText;
+      askGenAIQuestion(promptText);
+    });
+  });
+}
+
+async function askGenAIQuestion(question) {
+  const btn = document.getElementById("btn-ask-genai");
+  const container = document.getElementById("genai-response-container");
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-icon">⏳</span> Reasoning...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/genai/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || data.detail || "Query failed");
+    }
+
+    // Render results
+    document.getElementById("genai-explanation").innerHTML = data.explanation.replace(
+      /\*\*(.*?)\*\*/g,
+      "<strong>$1</strong>"
+    );
+    document.getElementById("genai-sql").textContent = data.sql;
+    document.getElementById("genai-row-count").textContent = data.row_count;
+
+    // Build results table
+    const thead = document.getElementById("thead-genai");
+    const tbody = document.getElementById("tbody-genai");
+
+    if (data.rows && data.rows.length > 0) {
+      const cols = Object.keys(data.rows[0]);
+      thead.innerHTML = `<tr>${cols.map((c) => `<th>${c}</th>`).join("")}</tr>`;
+      tbody.innerHTML = data.rows
+        .map(
+          (row) =>
+            `<tr>${cols.map((c) => `<td>${row[c] !== null ? row[c] : "--"}</td>`).join("")}</tr>`
+        )
+        .join("");
+    } else {
+      thead.innerHTML = "";
+      tbody.innerHTML = '<tr><td class="loading-cell">Zero rows matched query conditions.</td></tr>';
+    }
+
+    container.classList.remove("hidden");
+  } catch (err) {
+    showAlert(`GenAI Error: ${err.message}`, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "Ask Assistant";
+  }
 }
