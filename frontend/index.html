@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WEATHERDATA — Data Warehouse & Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <span class="brand-title">WEATHERDATA</span>
+          <span class="brand-subtitle">Data Warehouse & Analytics</span>
+        </div>
+      </div>
+      
+      <nav class="nav-links">
+        <button class="nav-btn active" data-target="section-dashboard">Dashboard</button>
+        <button class="nav-btn" data-target="section-history">Weather History</button>
+        <button class="nav-btn" data-target="section-analytics">Analytics Trends</button>
+        <button class="nav-btn" data-target="section-pipeline">Pipeline Monitor</button>
+      </nav>
+
+      <div class="header-actions">
+        <button id="btn-run-pipeline" class="btn btn-primary">
+          <span class="btn-icon">▶</span> Run ETL Pipeline
+        </button>
+        <button id="btn-refresh" class="btn btn-secondary" title="Refresh data">
+          <span class="btn-icon">🔄</span> Refresh
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Alert / Notification Banner -->
+    <div id="alert-banner" class="alert-banner hidden"></div>
+
+    <main class="main-content">
+      <!-- =============================================================== -->
+      <!-- SECTION 1: DASHBOARD OVERVIEW -->
+      <!-- =============================================================== -->
+      <section id="section-dashboard" class="content-section active">
+        <!-- KPI Metric Cards Grid -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon blue">📊</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Total Observations</div>
+              <div class="kpi-value" id="kpi-total-records">--</div>
+              <div class="kpi-subtext" id="kpi-cities-count">-- Cities Monitored</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon orange">🌡️</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Latest Avg Temp</div>
+              <div class="kpi-value" id="kpi-latest-temp">--°C</div>
+              <div class="kpi-subtext" id="kpi-temp-range">Min: --°C | Max: --°C</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon cyan">💧</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Average Humidity</div>
+              <div class="kpi-value" id="kpi-avg-humidity">--%</div>
+              <div class="kpi-subtext">Across All Stations</div>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-icon purple">🚀</div>
+            <div class="kpi-info">
+              <div class="kpi-label">Pipeline Status</div>
+              <div class="kpi-value" id="kpi-pipeline-status">--</div>
+              <div class="kpi-subtext" id="kpi-last-run-time">Last run: --</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Latest Weather Cards Carousel / Grid -->
+        <div class="panel-header">
+          <h2>Current Weather by Location</h2>
+          <span class="badge" id="badge-latest-count">0 Locations</span>
+        </div>
+        <div class="cards-grid" id="latest-weather-cards">
+          <!-- Populated by JavaScript -->
+          <div class="loading-state">Loading latest weather observations...</div>
+        </div>
+
+        <!-- Dashboard Charts Row -->
+        <div class="charts-row">
+          <div class="chart-container">
+            <div class="panel-header">
+              <h3>Temperature Trend (Past 7 Days)</h3>
+            </div>
+            <canvas id="chart-temp-trend"></canvas>
+          </div>
+          <div class="chart-container">
+            <div class="panel-header">
+              <h3>Humidity Trend (Past 7 Days)</h3>
+            </div>
+            <canvas id="chart-humidity-trend"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================== -->
+      <!-- SECTION 2: WEATHER HISTORY -->
+      <!-- =============================================================== -->
+      <section id="section-history" class="content-section">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <h2>Warehouse Historical Weather Records</h2>
+            <div class="filters-bar">
+              <select id="filter-history-city" class="form-control">
+                <option value="">All Cities</option>
+              </select>
+              <select id="filter-history-limit" class="form-control">
+                <option value="25">25 records</option>
+                <option value="50" selected>50 records</option>
+                <option value="100">100 records</option>
+              </select>
+              <button id="btn-apply-filter" class="btn btn-outline">Filter</button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="table-history">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>City</th>
+                  <th>Country</th>
+                  <th>Recorded At (UTC)</th>
+                  <th>Temp (°C)</th>
+                  <th>Humidity (%)</th>
+                  <th>Wind (km/h)</th>
+                  <th>Condition</th>
+                  <th>Source</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-history">
+                <tr><td colspan="9" class="loading-cell">Loading history records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================== -->
+      <!-- SECTION 3: ANALYTICS & BREAKDOWNS -->
+      <!-- =============================================================== -->
+      <section id="section-analytics" class="content-section">
+        <div class="panel-card">
+          <div class="panel-header">
+            <h2>Detailed Weather Analytics & Comparisons</h2>
+          </div>
+          <div class="analytics-metrics-grid">
+            <div class="stat-box">
+              <div class="stat-title">Overall Maximum Temperature</div>
+              <div class="stat-number" id="stat-max-temp">--°C</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-title">Overall Minimum Temperature</div>
+              <div class="stat-number" id="stat-min-temp">--°C</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-title">Overall Mean Temperature</div>
+              <div class="stat-number" id="stat-mean-temp">--°C</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-title">Overall Mean Humidity</div>
+              <div class="stat-number" id="stat-mean-humidity">--%</div>
+            </div>
+          </div>
+
+          <div class="chart-container full-width">
+            <div class="panel-header">
+              <h3>Records Count Distribution by City</h3>
+            </div>
+            <canvas id="chart-city-distribution"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- =============================================================== -->
+      <!-- SECTION 4: PIPELINE MONITOR -->
+      <!-- =============================================================== -->
+      <section id="section-pipeline" class="content-section">
+        <div class="panel-card">
+          <div class="panel-header flex-between">
+            <div>
+              <h2>ETL Pipeline Execution Telemetry</h2>
+              <p class="section-desc">Automated and manual ETL runs, ingestion metrics, and data quality audits.</p>
+            </div>
+            <div class="pipeline-actions">
+              <label class="checkbox-label">
+                <input type="checkbox" id="chk-sample-data"> Use Sample Offline Dataset
+              </label>
+              <button id="btn-trigger-monitor" class="btn btn-primary">
+                ▶ Trigger ETL Pipeline
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table" id="table-pipeline-runs">
+              <thead>
+                <tr>
+                  <th>Run ID</th>
+                  <th>Pipeline Name</th>
+                  <th>Status</th>
+                  <th>Started At</th>
+                  <th>Duration</th>
+                  <th>Extracted</th>
+                  <th>Loaded</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-pipeline-runs">
+                <tr><td colspan="8" class="loading-cell">Loading pipeline telemetry...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Pipeline Run Detail Modal -->
+    <div id="modal-run-detail" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-title">Pipeline Run Details</h3>
+          <button id="modal-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-body">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div>WEATHERDATA Platform &bull; Microsoft SQL Server &bull; FastAPI &bull; Open-Meteo REST API &bull; Pandas</div>
+      <div>Designed for Junior Data Engineer — GenAI Assessment</div>
+    </footer>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
