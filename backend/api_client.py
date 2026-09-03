@@ -58,7 +58,11 @@ class WeatherApiClient:
         self,
         base_url: Optional[str] = None,
         timeout: Optional[int] = None,
+        api_key: Optional[str] = None,
+        provider: Optional[str] = None,
     ) -> None:
+        self.provider = provider or settings.weather_api_provider
+        self.api_key = api_key or settings.weather_api_key
         self.base_url = base_url or settings.weather_api_base_url
         self.timeout = timeout or settings.weather_api_timeout_seconds
         self.session = self._init_session()
@@ -77,6 +81,89 @@ class WeatherApiClient:
         session.mount("http://", adapter)
         return session
 
+    def _fetch_from_weatherapi(
+        self,
+        latitude: float,
+        longitude: float,
+        location_id: Optional[int],
+        city_name: str,
+        country: str,
+    ) -> Dict[str, Any]:
+        """Fetch current weather from WeatherAPI.com using API key."""
+        url = "http://api.weatherapi.com/v1/current.json"
+        query_val = f"{latitude},{longitude}" if not city_name else city_name
+        params = {
+            "key": self.api_key,
+            "q": query_val,
+        }
+        logger.info(f"Requesting weather from WeatherAPI.com for {city_name or query_val}")
+        response = self.session.get(url, params=params, timeout=self.timeout)
+        response.raise_for_status()
+        data = response.json()
+
+        curr = data.get("current", {})
+        cond = curr.get("condition", {})
+
+        return {
+            "success": True,
+            "location_id": location_id,
+            "city_name": city_name or data.get("location", {}).get("name", ""),
+            "country": country or data.get("location", {}).get("country", ""),
+            "latitude": float(data.get("location", {}).get("lat", latitude)),
+            "longitude": float(data.get("location", {}).get("lon", longitude)),
+            "recorded_at": curr.get("last_updated"),
+            "temperature_c": curr.get("temp_c"),
+            "humidity_percent": curr.get("humidity"),
+            "wind_speed_kmh": curr.get("wind_kph"),
+            "weather_code": cond.get("code"),
+            "weather_condition": cond.get("text"),
+            "source": "weatherapi_com",
+            "raw_response": data,
+            "error": None,
+        }
+
+    def _fetch_from_openmeteo(
+        self,
+        latitude: float,
+        longitude: float,
+        location_id: Optional[int],
+        city_name: str,
+        country: str,
+    ) -> Dict[str, Any]:
+        """Fetch current weather from Open-Meteo REST API (keyless fallback)."""
+        url = "https://api.open-meteo.com/v1/forecast"
+        params = {
+            "latitude": float(latitude),
+            "longitude": float(longitude),
+            "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
+            "timezone": "auto",
+        }
+        logger.info(f"Requesting weather from Open-Meteo for {city_name} ({latitude}, {longitude})")
+        response = self.session.get(url, params=params, timeout=self.timeout)
+        response.raise_for_status()
+        data = response.json()
+
+        current = data.get("current", {})
+        weather_code = current.get("weather_code")
+
+        return {
+            "success": True,
+            "location_id": location_id,
+            "city_name": city_name,
+            "country": country,
+            "latitude": float(latitude),
+            "longitude": float(longitude),
+            "recorded_at": current.get("time"),
+            "temperature_c": current.get("temperature_2m"),
+            "humidity_percent": current.get("relative_humidity_2m"),
+            "wind_speed_kmh": current.get("wind_speed_10m"),
+            "weather_code": weather_code,
+            "weather_condition": decode_wmo_code(weather_code),
+            "source": "open_meteo",
+            "raw_response": data,
+            "error": None,
+        }
+
     def fetch_weather(
         self,
         latitude: float,
@@ -85,57 +172,20 @@ class WeatherApiClient:
         city_name: str = "",
         country: str = "",
     ) -> Dict[str, Any]:
-        """
-        Fetch real-time current weather from Open-Meteo API for given coordinates.
-
-        Endpoint returns:
-          current: {
-            time: '2026-09-03T09:00',
-            temperature_2m: 24.5,
-            relative_humidity_2m: 68,
-            wind_speed_10m: 11.2,
-            weather_code: 3
-          }
-        """
-        params = {
-            "latitude": float(latitude),
-            "longitude": float(longitude),
-            "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code",
-            "timezone": "auto",
-        }
-
+        """Fetch real-time weather using configured provider with automatic fallback."""
         try:
-            logger.info(
-                f"Requesting weather for {city_name or 'coordinates'} ({latitude}, {longitude})"
+            if self.provider == "weatherapi" and self.api_key:
+                try:
+                    return self._fetch_from_weatherapi(
+                        latitude, longitude, location_id, city_name, country
+                    )
+                except Exception as w_err:
+                    logger.warning(
+                        f"WeatherAPI.com request failed for {city_name}: {w_err}. Falling back to Open-Meteo."
+                    )
+            return self._fetch_from_openmeteo(
+                latitude, longitude, location_id, city_name, country
             )
-            response = self.session.get(
-                self.base_url,
-                params=params,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            data = response.json()
-
-            current = data.get("current", {})
-            weather_code = current.get("weather_code")
-
-            return {
-                "success": True,
-                "location_id": location_id,
-                "city_name": city_name,
-                "country": country,
-                "latitude": float(latitude),
-                "longitude": float(longitude),
-                "recorded_at": current.get("time"),
-                "temperature_c": current.get("temperature_2m"),
-                "humidity_percent": current.get("relative_humidity_2m"),
-                "wind_speed_kmh": current.get("wind_speed_10m"),
-                "weather_code": weather_code,
-                "weather_condition": decode_wmo_code(weather_code),
-                "raw_response": data,
-                "error": None,
-            }
-
         except requests.exceptions.Timeout as e:
             logger.error(f"Timeout connecting to Weather API for {city_name}: {e}")
             return {

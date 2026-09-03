@@ -16,8 +16,16 @@ class Settings(BaseSettings):
     db_password: Optional[str] = Field(default=None, validation_alias="DB_PASSWORD")
 
     # Weather API Configuration
+    weather_api_provider: str = Field(
+        default="weatherapi",
+        validation_alias="WEATHER_API_PROVIDER",
+    )
+    weather_api_key: Optional[str] = Field(
+        default="d41847f42517475483e63944261706",
+        validation_alias="WEATHER_API_KEY",
+    )
     weather_api_base_url: str = Field(
-        default="https://api.open-meteo.com/v1/forecast",
+        default="http://api.weatherapi.com/v1/current.json",
         validation_alias="WEATHER_API_BASE_URL",
     )
     weather_api_timeout_seconds: int = Field(default=10, validation_alias="WEATHER_API_TIMEOUT_SECONDS")

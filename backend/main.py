@@ -87,6 +87,51 @@ def explicit_health_check():
     }
 
 
+@app.get("/links", tags=["Health & WebUI"])
+@app.get("/portal", tags=["Health & WebUI"])
+def all_links_directory(request: Request):
+    """
+    Centralized One-Link-to-All-Links Directory:
+    - Returns visual Portal page in browser (text/html).
+    - Returns complete catalog of all application links in JSON format.
+    """
+    accept_header = request.headers.get("accept", "")
+    links_file = frontend_dir / "links.html"
+
+    if "text/html" in accept_header and links_file.exists():
+        return FileResponse(links_file)
+
+    base = f"http://{settings.app_host}:{settings.app_port}"
+    return {
+        "platform": "WEATHERDATA Platform",
+        "one_link_portal": f"{base}/links",
+        "portals_and_ui": {
+            "web_dashboard": f"{base}/",
+            "all_links_portal": f"{base}/links",
+            "swagger_docs": f"{base}/docs",
+            "redoc_docs": f"{base}/redoc",
+            "health_check": f"{base}/health",
+        },
+        "weather_apis": {
+            "latest_weather": f"{base}/api/weather/latest",
+            "weather_history": f"{base}/api/weather/history",
+            "weather_history_by_city": f"{base}/api/weather/history/Bangalore",
+            "locations": f"{base}/api/locations",
+        },
+        "analytics_apis": {
+            "summary_kpis": f"{base}/api/analytics/summary",
+            "temperature_trend": f"{base}/api/analytics/temperature-trend",
+            "humidity_trend": f"{base}/api/analytics/humidity-trend",
+        },
+        "pipeline_and_genai": {
+            "pipeline_runs": f"{base}/api/pipeline/runs",
+            "pipeline_run_details": f"{base}/api/pipeline/runs/1",
+            "trigger_pipeline_post": f"{base}/api/pipeline/run",
+            "genai_assistant_post": f"{base}/api/genai/ask",
+        },
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(

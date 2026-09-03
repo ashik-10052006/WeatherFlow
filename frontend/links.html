@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WEATHERDATA — All Links Directory & Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .portal-container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+    .portal-hero {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding: 2.5rem;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9));
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+    .portal-title {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.5rem;
+    }
+    .portal-subtitle {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      max-width: 650px;
+      margin: 0 auto 1.5rem;
+    }
+    .hero-badges {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .category-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      margin: 2rem 0 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1.25rem;
+    }
+    .link-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .link-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-blue);
+      box-shadow: var(--shadow-glow);
+    }
+    .link-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .method-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.2rem 0.5rem;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-mono);
+    }
+    .method-get {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid #059669;
+    }
+    .method-post {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid #2563eb;
+    }
+    .method-ui {
+      background-color: rgba(139, 92, 246, 0.15);
+      color: #c084fc;
+      border: 1px solid #7c3aed;
+    }
+    .link-path {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 0.35rem;
+    }
+    .link-desc {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 1rem;
+    }
+    .link-action {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-text">
+          <span class="brand-title">WEATHERDATA</span>
+          <span class="brand-subtitle">One Link to All Links</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="btn btn-primary">Open Main Dashboard</a>
+        <a href="/docs" class="btn btn-secondary">Open Swagger Docs</a>
+      </div>
+    </header>
+
+    <div class="portal-container">
+      <div class="portal-hero">
+        <div class="portal-title">🌐 Platform URL & API Directory</div>
+        <p class="portal-subtitle">
+          Centralized directory providing direct access to every dashboard interface, REST endpoint, telemetry log, and documentation resource in the WeatherData platform.
+        </p>
+        <div class="hero-badges">
+          <span class="badge">Active Provider: WeatherAPI.com & Open-Meteo</span>
+          <span class="badge">Database: SQL Server (WeatherDataWarehouse)</span>
+          <span class="badge">Port: 8000</span>
+        </div>
+      </div>
+
+      <!-- 1. Web Applications & Interactive Portals -->
+      <div class="category-title">🖥️ User Interfaces & Documentation</div>
+      <div class="links-grid">
+        <a href="/" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-ui">WEB UI</span>
+              <span class="badge">Dashboard</span>
+            </div>
+            <div class="link-path">/</div>
+            <div class="link-desc">Complete interactive single-page dashboard with real-time KPI cards, Chart.js trends, observation history, pipeline controls, and GenAI assistant.</div>
+          </div>
+          <div class="link-action">Launch Dashboard &rarr;</div>
+        </a>
+
+        <a href="/docs" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-ui">DOCS</span>
+              <span class="badge">Swagger UI</span>
+            </div>
+            <div class="link-path">/docs</div>
+            <div class="link-desc">Interactive OpenAPI Swagger UI allowing manual testing, payload inspection, and live execution of all REST API routes.</div>
+          </div>
+          <div class="link-action">Open Swagger &rarr;</div>
+        </a>
+
+        <a href="/redoc" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-ui">DOCS</span>
+              <span class="badge">ReDoc</span>
+            </div>
+            <div class="link-path">/redoc</div>
+            <div class="link-desc">Clean, responsive ReDoc technical API documentation and schema specifications.</div>
+          </div>
+          <div class="link-action">Open ReDoc &rarr;</div>
+        </a>
+
+        <a href="/health" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Health</span>
+            </div>
+            <div class="link-path">/health</div>
+            <div class="link-desc">Liveness and readiness health check returning SQL Server connectivity, database name, and service status.</div>
+          </div>
+          <div class="link-action">Inspect Health &rarr;</div>
+        </a>
+      </div>
+
+      <!-- 2. Weather Data Endpoints -->
+      <div class="category-title">⛅ Weather Observation APIs</div>
+      <div class="links-grid">
+        <a href="/api/weather/latest" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Live</span>
+            </div>
+            <div class="link-path">/api/weather/latest</div>
+            <div class="link-desc">Returns the most recent meteorological observation for every monitored city using SQL Server window functions.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <a href="/api/weather/history" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">History</span>
+            </div>
+            <div class="link-path">/api/weather/history</div>
+            <div class="link-desc">Returns time-series historical observations across all stations with support for limit and date filters.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <a href="/api/weather/history/Bangalore" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">City Filter</span>
+            </div>
+            <div class="link-path">/api/weather/history/Bangalore</div>
+            <div class="link-desc">Returns historical observations specifically filtered for Bangalore (or any city passed in the path).</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <a href="/api/locations" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Dimension</span>
+            </div>
+            <div class="link-path">/api/locations</div>
+            <div class="link-desc">Lists all monitored geographic stations with latitude, longitude, and country metadata.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+      </div>
+
+      <!-- 3. Analytics & Trend Endpoints -->
+      <div class="category-title">📊 Analytics & Warehouse Metrics</div>
+      <div class="links-grid">
+        <a href="/api/analytics/summary" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">KPIs</span>
+            </div>
+            <div class="link-path">/api/analytics/summary</div>
+            <div class="link-desc">Warehouse aggregate metrics: total observations, monitored cities, average/max/min temperatures, and mean humidity.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <a href="/api/analytics/temperature-trend" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Charts</span>
+            </div>
+            <div class="link-path">/api/analytics/temperature-trend</div>
+            <div class="link-desc">Daily temperature aggregates (mean, max, min) grouped by observation date and city over the past 7–90 days.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <a href="/api/analytics/humidity-trend" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Charts</span>
+            </div>
+            <div class="link-path">/api/analytics/humidity-trend</div>
+            <div class="link-desc">Daily relative humidity aggregates grouped by observation date and city.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+      </div>
+
+      <!-- 4. Pipeline Telemetry & GenAI -->
+      <div class="category-title">🚀 Pipeline Telemetry & GenAI Module</div>
+      <div class="links-grid">
+        <a href="/api/pipeline/runs" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Telemetry</span>
+            </div>
+            <div class="link-path">/api/pipeline/runs</div>
+            <div class="link-desc">Audit logs for every ETL run with extraction counts, loaded counts, duration, and status (SUCCESS / FAILED).</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <a href="/api/pipeline/runs/1" target="_blank" class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-get">GET</span>
+              <span class="badge">Quality Logs</span>
+            </div>
+            <div class="link-path">/api/pipeline/runs/1</div>
+            <div class="link-desc">Detailed telemetry and data quality anomaly logs for pipeline execution #1.</div>
+          </div>
+          <div class="link-action">View JSON &rarr;</div>
+        </a>
+
+        <div class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-post">POST</span>
+              <span class="badge">ETL Action</span>
+            </div>
+            <div class="link-path">/api/pipeline/run</div>
+            <div class="link-desc">Triggers the end-to-end ETL pipeline (Extract &rarr; Transform &rarr; Validate &rarr; Load &rarr; Log) with optional sample data flag.</div>
+          </div>
+          <div class="link-action">Triggerable via Dashboard or /docs</div>
+        </div>
+
+        <div class="link-card">
+          <div>
+            <div class="link-top">
+              <span class="method-badge method-post">POST</span>
+              <span class="badge">AI Assistant</span>
+            </div>
+            <div class="link-path">/api/genai/ask</div>
+            <div class="link-desc">Safe Text-to-SQL Assistant: converts natural language questions into validated read-only SQL and returns natural language explanations.</div>
+          </div>
+          <div class="link-action">Interactive on Dashboard or /docs</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div>WEATHERDATA Platform &bull; All Links Directory &bull; Port 8000</div>
+      <div>Designed for Junior Data Engineer — GenAI Assessment</div>
+    </footer>
+  </div>
+</body>
+</html>
