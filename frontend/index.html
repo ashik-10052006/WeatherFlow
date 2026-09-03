@@ -177,7 +177,18 @@
       <section id="section-history" class="content-section">
         <div class="panel-card">
           <div class="panel-header flex-between">
-            <h2>Warehouse Historical Weather Records</h2>
+            <div>
+              <h2>Warehouse Historical Weather Records</h2>
+              <p class="section-desc">Search, filter, and inspect time-series observations across all monitored and searched stations.</p>
+            </div>
+            <span class="badge" id="badge-history-count">0 Records</span>
+          </div>
+
+          <!-- History Search & Filter Toolbar -->
+          <div class="history-toolbar">
+            <div class="history-search-box">
+              <input type="text" id="input-history-search" class="form-control" placeholder="🔍 Search any city (e.g. Chennai, Pudukkottai, Dubai, Tokyo)...">
+            </div>
             <div class="filters-bar">
               <select id="filter-history-city" class="form-control">
                 <option value="">All Cities</option>
@@ -186,10 +197,14 @@
                 <option value="25">25 records</option>
                 <option value="50" selected>50 records</option>
                 <option value="100">100 records</option>
+                <option value="200">200 records</option>
               </select>
-              <button id="btn-apply-filter" class="btn btn-outline">Filter</button>
+              <button id="btn-apply-filter" class="btn btn-primary">Refresh Filter</button>
             </div>
           </div>
+
+          <!-- Quick City Filter Chips -->
+          <div class="history-quick-chips" id="history-quick-chips"></div>
 
           <div class="table-responsive">
             <table class="data-table" id="table-history">

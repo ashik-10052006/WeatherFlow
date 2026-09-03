@@ -64,8 +64,38 @@ function setupActions() {
     triggerETLPipeline(useSample);
   });
 
-  // History Filters
-  document.getElementById("btn-apply-filter").addEventListener("click", fetchWeatherHistory);
+  // History Filters & Instant Dynamic Search
+  const btnApplyFilter = document.getElementById("btn-apply-filter");
+  const filterCity = document.getElementById("filter-history-city");
+  const filterLimit = document.getElementById("filter-history-limit");
+  const inputHistorySearch = document.getElementById("input-history-search");
+
+  if (btnApplyFilter) {
+    btnApplyFilter.addEventListener("click", () => fetchWeatherHistory());
+  }
+  if (filterCity) {
+    filterCity.addEventListener("change", () => {
+      if (inputHistorySearch) inputHistorySearch.value = filterCity.value;
+      updateHistoryChipsActive(filterCity.value);
+      fetchWeatherHistory();
+    });
+  }
+  if (filterLimit) {
+    filterLimit.addEventListener("change", () => fetchWeatherHistory());
+  }
+  if (inputHistorySearch) {
+    inputHistorySearch.addEventListener("input", (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      filterHistoryTableClientSide(q);
+    });
+    inputHistorySearch.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const val = inputHistorySearch.value.trim();
+        if (filterCity) filterCity.value = val;
+        fetchWeatherHistory();
+      }
+    });
+  }
 
   // Modal Close
   document.getElementById("modal-close").addEventListener("click", closeModal);
@@ -168,7 +198,7 @@ async function fetchLocations() {
     const data = await res.json();
     state.locations = data;
 
-    // Populate City Filter dropdown
+    // Populate City Filter dropdown in Weather History
     const select = document.getElementById("filter-history-city");
     const currentVal = select.value;
     select.innerHTML = '<option value="">All Cities</option>';
@@ -178,10 +208,58 @@ async function fetchLocations() {
       opt.textContent = `${loc.city_name}, ${loc.country || ""}`;
       select.appendChild(opt);
     });
-    select.value = currentVal;
+    if (currentVal) select.value = currentVal;
+
+    // Populate Quick Filter Chips in Weather History
+    const chipsContainer = document.getElementById("history-quick-chips");
+    if (chipsContainer) {
+      let chipsHtml = `<button class="chip-history-btn ${!select.value ? 'active' : ''}" data-city="">🌐 All Cities</button>`;
+      data.forEach((loc) => {
+        const isActive = select.value === loc.city_name ? "active" : "";
+        chipsHtml += `<button class="chip-history-btn ${isActive}" data-city="${loc.city_name}">${loc.city_name}</button>`;
+      });
+      chipsContainer.innerHTML = chipsHtml;
+
+      chipsContainer.querySelectorAll(".chip-history-btn").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          const city = chip.getAttribute("data-city");
+          select.value = city;
+          updateHistoryChipsActive(city);
+          const inputSearch = document.getElementById("input-history-search");
+          if (inputSearch) inputSearch.value = city;
+          fetchWeatherHistory();
+        });
+      });
+    }
   } catch (e) {
     console.error("fetchLocations failed:", e);
   }
+}
+
+function updateHistoryChipsActive(selectedCity) {
+  const chipsContainer = document.getElementById("history-quick-chips");
+  if (!chipsContainer) return;
+  chipsContainer.querySelectorAll(".chip-history-btn").forEach((chip) => {
+    const city = chip.getAttribute("data-city") || "";
+    if (city.toLowerCase() === (selectedCity || "").toLowerCase()) {
+      chip.classList.add("active");
+    } else {
+      chip.classList.remove("active");
+    }
+  });
+}
+
+function filterHistoryTableClientSide(q) {
+  const rows = document.querySelectorAll("#tbody-history tr");
+  let visibleCount = 0;
+  rows.forEach((row) => {
+    const text = row.textContent.toLowerCase();
+    const matches = !q || text.includes(q);
+    row.style.display = matches ? "" : "none";
+    if (matches) visibleCount++;
+  });
+  const badge = document.getElementById("badge-history-count");
+  if (badge) badge.textContent = `${visibleCount} Records`;
 }
 
 function getWeatherVisuals(conditionText) {
@@ -279,8 +357,12 @@ async function fetchHumidityTrend() {
 
 async function fetchWeatherHistory() {
   try {
-    const city = document.getElementById("filter-history-city").value;
-    const limit = document.getElementById("filter-history-limit").value;
+    const citySelect = document.getElementById("filter-history-city");
+    const cityInput = document.getElementById("input-history-search");
+    const limitSelect = document.getElementById("filter-history-limit");
+
+    const limit = limitSelect ? limitSelect.value : 50;
+    let city = (citySelect && citySelect.value) ? citySelect.value : (cityInput ? cityInput.value.trim() : "");
 
     let url = `${API_BASE}/api/weather/history?limit=${limit}`;
     if (city) url += `&city=${encodeURIComponent(city)}`;
@@ -289,26 +371,39 @@ async function fetchWeatherHistory() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
 
+    const badge = document.getElementById("badge-history-count");
+    if (badge) badge.textContent = `${data.length} Records`;
+
     const tbody = document.getElementById("tbody-history");
     if (!data || data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="loading-cell">No matching historical records found.</td></tr>';
+      const searchPrompt = city ? `
+        <div style="margin-top: 0.75rem;">
+          <button class="btn btn-primary btn-sm" onclick="searchAndIngestCity('${city}')">
+            🌐 Search & Ingest "${city}" Live from Weather API
+          </button>
+        </div>
+      ` : "";
+      tbody.innerHTML = `<tr><td colspan="9" class="loading-cell">No matching historical records found for "${city || 'all'}". ${searchPrompt}</td></tr>`;
       return;
     }
 
     tbody.innerHTML = data
-      .map((r) => `
-        <tr>
-          <td>#${r.weather_id}</td>
-          <td><strong>${r.city_name}</strong></td>
-          <td>${r.country || "--"}</td>
-          <td>${r.recorded_at ? r.recorded_at.replace("T", " ") : "--"}</td>
-          <td>${r.temperature_c !== null ? `${r.temperature_c}°C` : "--"}</td>
-          <td>${r.humidity_percent !== null ? `${r.humidity_percent}%` : "--"}</td>
-          <td>${r.wind_speed_kmh !== null ? `${r.wind_speed_kmh} km/h` : "--"}</td>
-          <td>${r.weather_condition || "Unknown"}</td>
-          <td><span class="badge">${r.source}</span></td>
-        </tr>
-      `)
+      .map((r) => {
+        const condVisuals = getWeatherVisuals(r.weather_condition);
+        return `
+          <tr>
+            <td>#${r.weather_id}</td>
+            <td><strong>${r.city_name}</strong></td>
+            <td>${r.country || "--"}</td>
+            <td>${r.recorded_at ? r.recorded_at.replace("T", " ") : "--"}</td>
+            <td><strong>${r.temperature_c !== null ? `${r.temperature_c}°C` : "--"}</strong></td>
+            <td>${r.humidity_percent !== null ? `${r.humidity_percent}%` : "--"}</td>
+            <td>${r.wind_speed_kmh !== null ? `${r.wind_speed_kmh} km/h` : "--"}</td>
+            <td>${condVisuals.icon} ${r.weather_condition || "Unknown"}</td>
+            <td><span class="badge">${r.source}</span></td>
+          </tr>
+        `;
+      })
       .join("");
   } catch (e) {
     console.error("fetchWeatherHistory failed:", e);
@@ -1035,6 +1130,14 @@ async function searchAndIngestCity(cityName) {
 
     // Refresh entire platform data so KPIs, cards, and history update immediately
     await fetchAllData();
+
+    // Auto-select and display newly searched city in Weather History filter
+    const histSelect = document.getElementById("filter-history-city");
+    if (histSelect) {
+      histSelect.value = data.city_name;
+      updateHistoryChipsActive(data.city_name);
+      fetchWeatherHistory();
+    }
   } catch (err) {
     console.error("City search error:", err);
     showAlert(`City Search: ${err.message}`, "error");

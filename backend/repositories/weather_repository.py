@@ -177,7 +177,11 @@ class WeatherRepository:
         )
 
         if city_name:
-            query = query.filter(func.lower(Location.city_name) == city_name.strip().lower())
+            clean_name = city_name.strip().split(",")[0].strip().lower()
+            query = query.filter(
+                (func.lower(Location.city_name) == clean_name)
+                | (func.lower(Location.city_name).like(f"%{clean_name}%"))
+            )
         if start_date:
             query = query.filter(WeatherRecord.recorded_at >= start_date)
         if end_date:
