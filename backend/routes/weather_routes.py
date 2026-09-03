@@ -4,9 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 import pandas as pd
+import requests
 from backend.api_client import WeatherApiClient
+from backend.config import settings
 from backend.data_validator import WeatherDataValidator
 from backend.database import get_db
+from backend.models import Location
 from backend.repositories.weather_repository import WeatherRepository
 from backend.schemas import (
     LocationResponse,
@@ -229,4 +232,168 @@ def search_and_ingest_city(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error searching weather for {city_clean}: {str(e)}",
         )
+
+
+# Curated high-population Indian and Global cities for instant prefix suggestion
+TOP_CITIES = [
+    {"name": "Mumbai", "region": "Maharashtra", "country": "India"},
+    {"name": "Delhi", "region": "Delhi", "country": "India"},
+    {"name": "Bangalore", "region": "Karnataka", "country": "India"},
+    {"name": "Chennai", "region": "Tamil Nadu", "country": "India"},
+    {"name": "Kolkata", "region": "West Bengal", "country": "India"},
+    {"name": "Hyderabad", "region": "Telangana", "country": "India"},
+    {"name": "Ahmedabad", "region": "Gujarat", "country": "India"},
+    {"name": "Pune", "region": "Maharashtra", "country": "India"},
+    {"name": "Surat", "region": "Gujarat", "country": "India"},
+    {"name": "Jaipur", "region": "Rajasthan", "country": "India"},
+    {"name": "Lucknow", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Kanpur", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Nagpur", "region": "Maharashtra", "country": "India"},
+    {"name": "Indore", "region": "Madhya Pradesh", "country": "India"},
+    {"name": "Thane", "region": "Maharashtra", "country": "India"},
+    {"name": "Bhopal", "region": "Madhya Pradesh", "country": "India"},
+    {"name": "Visakhapatnam", "region": "Andhra Pradesh", "country": "India"},
+    {"name": "Pudukkottai", "region": "Tamil Nadu", "country": "India"},
+    {"name": "Coimbatore", "region": "Tamil Nadu", "country": "India"},
+    {"name": "Madurai", "region": "Tamil Nadu", "country": "India"},
+    {"name": "Tiruchirappalli", "region": "Tamil Nadu", "country": "India"},
+    {"name": "Salem", "region": "Tamil Nadu", "country": "India"},
+    {"name": "Patna", "region": "Bihar", "country": "India"},
+    {"name": "Vadodara", "region": "Gujarat", "country": "India"},
+    {"name": "Ghaziabad", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Ludhiana", "region": "Punjab", "country": "India"},
+    {"name": "Agra", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Nashik", "region": "Maharashtra", "country": "India"},
+    {"name": "Faridabad", "region": "Haryana", "country": "India"},
+    {"name": "Meerut", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Rajkot", "region": "Gujarat", "country": "India"},
+    {"name": "Varanasi", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Srinagar", "region": "Jammu and Kashmir", "country": "India"},
+    {"name": "Amritsar", "region": "Punjab", "country": "India"},
+    {"name": "Navi Mumbai", "region": "Maharashtra", "country": "India"},
+    {"name": "Allahabad", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Ranchi", "region": "Jharkhand", "country": "India"},
+    {"name": "Chandigarh", "region": "Chandigarh", "country": "India"},
+    {"name": "Mysore", "region": "Karnataka", "country": "India"},
+    {"name": "Noida", "region": "Uttar Pradesh", "country": "India"},
+    {"name": "Kochi", "region": "Kerala", "country": "India"},
+    {"name": "Thiruvananthapuram", "region": "Kerala", "country": "India"},
+    {"name": "Dubai", "region": "Dubai", "country": "United Arab Emirates"},
+    {"name": "Abu Dhabi", "region": "Abu Dhabi", "country": "United Arab Emirates"},
+    {"name": "Sharjah", "region": "Sharjah", "country": "United Arab Emirates"},
+    {"name": "Doha", "region": "Ad Dawhah", "country": "Qatar"},
+    {"name": "Riyadh", "region": "Ar Riyad", "country": "Saudi Arabia"},
+    {"name": "Singapore", "region": "Singapore", "country": "Singapore"},
+    {"name": "Kuala Lumpur", "region": "Kuala Lumpur", "country": "Malaysia"},
+    {"name": "Bangkok", "region": "Bangkok", "country": "Thailand"},
+    {"name": "London", "region": "City of London", "country": "United Kingdom"},
+    {"name": "Manchester", "region": "Greater Manchester", "country": "United Kingdom"},
+    {"name": "Paris", "region": "Ile-de-France", "country": "France"},
+    {"name": "Berlin", "region": "Berlin", "country": "Germany"},
+    {"name": "Munich", "region": "Bavaria", "country": "Germany"},
+    {"name": "Frankfurt", "region": "Hesse", "country": "Germany"},
+    {"name": "Amsterdam", "region": "North Holland", "country": "Netherlands"},
+    {"name": "Zurich", "region": "Zurich", "country": "Switzerland"},
+    {"name": "Rome", "region": "Lazio", "country": "Italy"},
+    {"name": "Milan", "region": "Lombardy", "country": "Italy"},
+    {"name": "Madrid", "region": "Madrid", "country": "Spain"},
+    {"name": "Barcelona", "region": "Catalonia", "country": "Spain"},
+    {"name": "Tokyo", "region": "Tokyo", "country": "Japan"},
+    {"name": "Osaka", "region": "Osaka", "country": "Japan"},
+    {"name": "Seoul", "region": "Seoul", "country": "South Korea"},
+    {"name": "Sydney", "region": "New South Wales", "country": "Australia"},
+    {"name": "Melbourne", "region": "Victoria", "country": "Australia"},
+    {"name": "Brisbane", "region": "Queensland", "country": "Australia"},
+    {"name": "Toronto", "region": "Ontario", "country": "Canada"},
+    {"name": "Vancouver", "region": "British Columbia", "country": "Canada"},
+    {"name": "Montreal", "region": "Quebec", "country": "Canada"},
+    {"name": "New York", "region": "New York", "country": "United States"},
+    {"name": "Los Angeles", "region": "California", "country": "United States"},
+    {"name": "Chicago", "region": "Illinois", "country": "United States"},
+    {"name": "San Francisco", "region": "California", "country": "United States"},
+    {"name": "Miami", "region": "Florida", "country": "United States"},
+    {"name": "Seattle", "region": "Washington", "country": "United States"},
+    {"name": "Cairo", "region": "Al Qahirah", "country": "Egypt"},
+    {"name": "Johannesburg", "region": "Gauteng", "country": "South Africa"},
+    {"name": "Cape Town", "region": "Western Cape", "country": "South Africa"},
+]
+
+
+@router.get("/weather/suggest")
+def get_city_suggestions(
+    q: str = Query(..., min_length=1, description="Prefix or partial city search term (e.g. mum, chen, dub)"),
+    db: Session = Depends(get_db),
+):
+    """
+    Real-Time City Autocomplete Suggestions:
+    Combines:
+    1. Curated world & Indian metropolitan cities (e.g. 'mum' -> Mumbai).
+    2. SQL Server registered warehouse locations.
+    3. Live WeatherAPI search endpoint.
+    """
+    term = q.strip().lower()
+    if not term:
+        return []
+
+    results = []
+    seen = set()
+
+    def add_match(name: str, region: Optional[str], country: Optional[str], source: str):
+        key = f"{name.lower().strip()}_{country.lower().strip() if country else ''}"
+        if key not in seen:
+            seen.add(key)
+            display_parts = [name]
+            if region and region.lower() != name.lower():
+                display_parts.append(region)
+            if country:
+                display_parts.append(country)
+            results.append({
+                "name": name,
+                "region": region or "",
+                "country": country or "",
+                "display": ", ".join(display_parts),
+                "source": source,
+            })
+
+    # 1. Check curated high-population list (prefix first, then contains)
+    for c in TOP_CITIES:
+        c_name = c["name"].lower()
+        if c_name.startswith(term):
+            add_match(c["name"], c.get("region"), c.get("country"), "curated")
+
+    for c in TOP_CITIES:
+        c_name = c["name"].lower()
+        if term in c_name and not c_name.startswith(term):
+            add_match(c["name"], c.get("region"), c.get("country"), "curated")
+
+    # 2. Check local database registered locations
+    try:
+        db_locs = (
+            db.query(Location)
+            .filter(Location.city_name.ilike(f"%{term}%"))
+            .limit(10)
+            .all()
+        )
+        for loc in db_locs:
+            add_match(loc.city_name, None, loc.country, "warehouse")
+    except Exception as e:
+        logger.warning(f"Error querying locations for suggest: {e}")
+
+    # 3. Query WeatherAPI live search for worldwide coverage
+    if settings.weather_api_key:
+        try:
+            url = f"http://api.weatherapi.com/v1/search.json?key={settings.weather_api_key}&q={term}"
+            res = requests.get(url, timeout=2.5)
+            if res.ok:
+                for item in res.json():
+                    add_match(
+                        item.get("name"),
+                        item.get("region"),
+                        item.get("country"),
+                        "weatherapi",
+                    )
+        except Exception as e:
+            logger.debug(f"Live WeatherAPI suggest query skipped: {e}")
+
+    return results[:8]
 

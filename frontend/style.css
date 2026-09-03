@@ -397,6 +397,11 @@ body {
   margin-top: 0.15rem;
 }
 
+.search-capsule-wrapper {
+  position: relative;
+  width: 100%;
+}
+
 .search-capsule {
   display: flex;
   align-items: center;
@@ -411,6 +416,86 @@ body {
 .search-capsule:focus-within {
   border-color: #38bdf8;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Auto-Suggest Dropdown Box */
+.search-suggestions-box {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #0b1324;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(56, 189, 248, 0.15);
+  z-index: 500;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  animation: fadeIn 0.2s ease;
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.active {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.suggestion-main {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.suggestion-icon {
+  font-size: 1.1rem;
+}
+
+.suggestion-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.suggestion-name mark {
+  background: transparent;
+  color: #38bdf8;
+  font-weight: 800;
+  text-decoration: underline;
+}
+
+.suggestion-sub {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-left: 0.4rem;
+}
+
+.suggestion-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.suggestion-badge.warehouse {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-color: rgba(16, 185, 129, 0.3);
 }
 
 .search-capsule-icon {

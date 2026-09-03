@@ -63,12 +63,16 @@
               <div class="search-subtitle">Query real-time meteorological observations for any worldwide city and persist to SQL Server.</div>
             </div>
           </div>
-          <div class="search-capsule">
-            <span class="search-capsule-icon">🔎</span>
-            <input type="text" id="input-city-search" class="search-capsule-input" placeholder="Search any city e.g. Dubai, Singapore, Toronto, Berlin, Cairo, Sydney...">
-            <button id="btn-search-city" class="btn-search-capsule">
-              <span>Search & Ingest</span> &rarr;
-            </button>
+          <div class="search-capsule-wrapper">
+            <div class="search-capsule">
+              <span class="search-capsule-icon">🔎</span>
+              <input type="text" id="input-city-search" class="search-capsule-input" placeholder="Search any city e.g. Mumbai, Dubai, Singapore, Toronto, Berlin..." autocomplete="off">
+              <button id="btn-search-city" class="btn-search-capsule">
+                <span>Search & Ingest</span> &rarr;
+              </button>
+            </div>
+            <!-- Auto-Suggest Dropdown Box -->
+            <div id="search-suggestions-box" class="search-suggestions-box hidden"></div>
           </div>
           <div class="popular-cities-row">
             <span class="popular-label">Popular Stations:</span>

@@ -1185,18 +1185,145 @@ async function askGenAIQuestion(question) {
 function setupCitySearch() {
   const searchInput = document.getElementById("input-city-search");
   const searchBtn = document.getElementById("btn-search-city");
+  const suggestionsBox = document.getElementById("search-suggestions-box");
   if (!searchInput || !searchBtn) return;
 
-  searchBtn.addEventListener("click", () => {
+  let debounceTimer = null;
+  let activeSuggestionIndex = -1;
+  let currentSuggestions = [];
+
+  // Live Auto-Suggest as user types (e.g. 'mum' -> 'Mumbai')
+  searchInput.addEventListener("input", () => {
     const q = searchInput.value.trim();
-    if (q) searchAndIngestCity(q);
+    clearTimeout(debounceTimer);
+    activeSuggestionIndex = -1;
+
+    if (q.length < 2) {
+      hideSuggestions();
+      return;
+    }
+
+    debounceTimer = setTimeout(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/weather/suggest?q=${encodeURIComponent(q)}`);
+        if (!res.ok) return;
+        const suggestions = await res.json();
+        currentSuggestions = suggestions;
+        renderSuggestions(suggestions, q);
+      } catch (err) {
+        console.error("Auto-suggest error:", err);
+      }
+    }, 180);
   });
 
+  // Keyboard navigation on suggestions
   searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const q = searchInput.value.trim();
-      if (q) searchAndIngestCity(q);
+    if (!suggestionsBox || suggestionsBox.classList.contains("hidden")) {
+      if (e.key === "Enter") {
+        const q = searchInput.value.trim();
+        if (q) searchAndIngestCity(q);
+      }
+      return;
     }
+
+    const items = suggestionsBox.querySelectorAll(".suggestion-item");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeSuggestionIndex = (activeSuggestionIndex + 1) % items.length;
+      updateActiveSuggestion(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeSuggestionIndex = (activeSuggestionIndex - 1 + items.length) % items.length;
+      updateActiveSuggestion(items);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (activeSuggestionIndex >= 0 && activeSuggestionIndex < currentSuggestions.length) {
+        selectSuggestion(currentSuggestions[activeSuggestionIndex]);
+      } else {
+        hideSuggestions();
+        const q = searchInput.value.trim();
+        if (q) searchAndIngestCity(q);
+      }
+    } else if (e.key === "Escape") {
+      hideSuggestions();
+    }
+  });
+
+  function updateActiveSuggestion(items) {
+    items.forEach((it, idx) => {
+      if (idx === activeSuggestionIndex) {
+        it.classList.add("active");
+        it.scrollIntoView({ block: "nearest" });
+      } else {
+        it.classList.remove("active");
+      }
+    });
+  }
+
+  function renderSuggestions(suggestions, query) {
+    if (!suggestionsBox) return;
+    if (!suggestions || suggestions.length === 0) {
+      hideSuggestions();
+      return;
+    }
+
+    const regex = new RegExp(`(${query})`, "gi");
+    suggestionsBox.innerHTML = suggestions
+      .map((item, idx) => {
+        const highlightedName = item.name.replace(regex, "<mark>$1</mark>");
+        const sub = item.region ? `${item.region}, ${item.country}` : item.country;
+        const badgeClass = item.source === "warehouse" ? "suggestion-badge warehouse" : "suggestion-badge";
+        const badgeLabel = item.source === "warehouse" ? "Saved" : "Global";
+
+        return `
+          <div class="suggestion-item" data-index="${idx}">
+            <div class="suggestion-main">
+              <span class="suggestion-icon">📍</span>
+              <div>
+                <span class="suggestion-name">${highlightedName}</span>
+                <span class="suggestion-sub">${sub || ""}</span>
+              </div>
+            </div>
+            <span class="${badgeClass}">${badgeLabel}</span>
+          </div>
+        `;
+      })
+      .join("");
+
+    suggestionsBox.querySelectorAll(".suggestion-item").forEach((el) => {
+      el.addEventListener("click", () => {
+        const idx = parseInt(el.getAttribute("data-index"), 10);
+        if (currentSuggestions[idx]) {
+          selectSuggestion(currentSuggestions[idx]);
+        }
+      });
+    });
+
+    suggestionsBox.classList.remove("hidden");
+  }
+
+  function selectSuggestion(item) {
+    searchInput.value = item.name;
+    hideSuggestions();
+    searchAndIngestCity(item.name);
+  }
+
+  function hideSuggestions() {
+    if (suggestionsBox) suggestionsBox.classList.add("hidden");
+    activeSuggestionIndex = -1;
+  }
+
+  // Close suggestions when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-capsule-wrapper")) {
+      hideSuggestions();
+    }
+  });
+
+  searchBtn.addEventListener("click", () => {
+    hideSuggestions();
+    const q = searchInput.value.trim();
+    if (q) searchAndIngestCity(q);
   });
 
   // Quick Ingest City Chips
@@ -1204,6 +1331,7 @@ function setupCitySearch() {
     btn.addEventListener("click", () => {
       const city = btn.getAttribute("data-city");
       searchInput.value = city;
+      hideSuggestions();
       searchAndIngestCity(city);
     });
   });
