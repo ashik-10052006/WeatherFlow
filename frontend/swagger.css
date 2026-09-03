@@ -1,0 +1,378 @@
+/* ==========================================================================
+   WEATHERDATA — Custom Swagger UI Modern Dark Theme
+   ========================================================================== */
+
+/* Global Reset & Base */
+body.swagger-section {
+  background-color: #090d16 !important;
+  color: #f8fafc !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom Platform Navigation Bar */
+.custom-docs-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background-color: rgba(15, 23, 42, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(12px);
+}
+
+.custom-docs-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: #ffffff;
+}
+
+.custom-docs-brand-icon {
+  font-size: 1.3rem;
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+}
+
+.custom-docs-brand-title {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-size: 1.15rem;
+  color: #ffffff;
+}
+
+.custom-docs-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.custom-docs-nav-btn {
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: all 0.2s ease;
+}
+
+.custom-docs-nav-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: #38bdf8;
+}
+
+.custom-docs-nav-btn.primary {
+  background-color: #38bdf8;
+  color: #090d16;
+  border-color: #38bdf8;
+}
+
+/* Hide Default Swagger Topbar */
+.swagger-ui .topbar {
+  display: none !important;
+}
+
+/* Main Container */
+.swagger-ui .wrapper {
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  padding: 1.5rem 2rem !important;
+}
+
+/* Information Section / Hero */
+.swagger-ui .info {
+  margin: 1.5rem 0 2rem 0 !important;
+  background: linear-gradient(135deg, #111a2e, #17243c) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 12px !important;
+  padding: 2rem !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.swagger-ui .info::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, #38bdf8, #06b6d4, #8b5cf6);
+}
+
+.swagger-ui .info .title {
+  color: #ffffff !important;
+  font-size: 2rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+}
+
+.swagger-ui .info .title small {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  border-radius: 9999px !important;
+  padding: 0.25rem 0.65rem !important;
+  top: 0 !important;
+}
+
+.swagger-ui .info p,
+.swagger-ui .info li {
+  color: #94a3b8 !important;
+  font-size: 0.95rem !important;
+  line-height: 1.6 !important;
+}
+
+.swagger-ui .info a {
+  color: #38bdf8 !important;
+  text-decoration: none !important;
+}
+
+/* Quick Filter Search Input */
+.swagger-ui .filter-wrapper {
+  margin-bottom: 2rem !important;
+}
+
+.swagger-ui .filter .operation-filter-input {
+  width: 100% !important;
+  padding: 0.85rem 1.25rem !important;
+  background-color: #111a2e !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  font-size: 0.95rem !important;
+  font-family: inherit !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.swagger-ui .filter .operation-filter-input:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+  outline: none !important;
+}
+
+/* Operation Tags / Categories */
+.swagger-ui .opblock-tag-section {
+  margin-bottom: 2rem !important;
+}
+
+.swagger-ui .opblock-tag {
+  color: #38bdf8 !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0.75rem 0 !important;
+}
+
+.swagger-ui .opblock-tag small {
+  color: #64748b !important;
+  font-size: 0.85rem !important;
+}
+
+/* Operation Accordion Blocks */
+.swagger-ui .opblock {
+  background: #111a2e !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  margin: 0 0 1rem 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+.swagger-ui .opblock:hover {
+  border-color: rgba(56, 189, 248, 0.4) !important;
+  transform: translateY(-2px);
+}
+
+.swagger-ui .opblock .opblock-summary {
+  padding: 0.85rem 1.25rem !important;
+}
+
+.swagger-ui .opblock .opblock-summary-method {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important;
+  font-size: 0.85rem !important;
+  padding: 0.35rem 0.85rem !important;
+  border-radius: 6px !important;
+  min-width: 80px !important;
+  text-align: center !important;
+}
+
+/* Method: GET */
+.swagger-ui .opblock.opblock-get {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  background: rgba(16, 185, 129, 0.03) !important;
+}
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+}
+.swagger-ui .opblock.opblock-get .opblock-summary-path {
+  color: #f8fafc !important;
+}
+
+/* Method: POST */
+.swagger-ui .opblock.opblock-post {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  background: rgba(59, 130, 246, 0.03) !important;
+}
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+.swagger-ui .opblock.opblock-post .opblock-summary-path {
+  color: #f8fafc !important;
+}
+
+/* Path text */
+.swagger-ui .opblock .opblock-summary-path {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+}
+
+.swagger-ui .opblock .opblock-summary-description {
+  color: #94a3b8 !important;
+  font-size: 0.85rem !important;
+}
+
+/* Operation Body (Expanded View) */
+.swagger-ui .opblock-body {
+  background-color: #0d1527 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding: 1.5rem !important;
+}
+
+.swagger-ui .opblock-description-wrapper p,
+.swagger-ui .opblock-external-docs-wrapper p,
+.swagger-ui .opblock-title_normal p {
+  color: #94a3b8 !important;
+  font-size: 0.9rem !important;
+}
+
+/* Tables in Parameters & Responses */
+.swagger-ui table {
+  color: #f8fafc !important;
+}
+
+.swagger-ui table thead tr th {
+  color: #94a3b8 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+}
+
+.swagger-ui table tbody tr td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  color: #e2e8f0 !important;
+}
+
+.swagger-ui .parameter__name {
+  color: #38bdf8 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 600 !important;
+}
+
+.swagger-ui .parameter__type {
+  color: #a855f7 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Form inputs & selects inside Swagger */
+.swagger-ui input[type=text],
+.swagger-ui input[type=password],
+.swagger-ui select,
+.swagger-ui textarea {
+  background-color: #080c16 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 6px !important;
+  color: #ffffff !important;
+  padding: 0.5rem 0.75rem !important;
+  font-family: inherit !important;
+}
+
+.swagger-ui input[type=text]:focus,
+.swagger-ui textarea:focus {
+  border-color: #38bdf8 !important;
+  outline: none !important;
+}
+
+/* Execute Button */
+.swagger-ui .btn.execute {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  border-radius: 6px !important;
+  padding: 0.6rem 2rem !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+  transition: all 0.2s ease !important;
+}
+
+.swagger-ui .btn.execute:hover {
+  background-color: #1d4ed8 !important;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6) !important;
+  transform: translateY(-1px);
+}
+
+.swagger-ui .btn.btn-clear {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  border-radius: 6px !important;
+}
+
+/* Responses Section */
+.swagger-ui .responses-wrapper {
+  margin-top: 1.5rem !important;
+}
+
+.swagger-ui .responses-table {
+  background-color: transparent !important;
+}
+
+.swagger-ui .response-col_status {
+  font-family: 'JetBrains Mono', monospace !important;
+  font-weight: 700 !important;
+  color: #34d399 !important;
+}
+
+.swagger-ui .highlight-code pre {
+  background-color: #080c16 !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 6px !important;
+  color: #38bdf8 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 0.85rem !important;
+}
+
+.swagger-ui .copy-to-clipboard {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 4px !important;
+}
+
+/* Hide Schemas clutter */
+.swagger-ui section.models {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 10px !important;
+  background-color: #111a2e !important;
+  margin-top: 3rem !important;
+}
+
+.swagger-ui section.models h4 {
+  color: #94a3b8 !important;
+}

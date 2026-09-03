@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -25,7 +26,7 @@ app = FastAPI(
     title="WeatherData — Weather API Data Warehouse & Analytics Platform",
     description="Production-grade Weather Data Warehouse & ETL Analytics API.",
     version="1.0.0",
-    docs_url="/docs",
+    docs_url=None,  # Custom enhanced Swagger UI served at /docs
     redoc_url="/redoc",
 )
 
@@ -194,6 +195,60 @@ def json_to_ui_studio(request: Request):
     if studio_file.exists():
         return FileResponse(studio_file)
     return HTMLResponse("<h1>JSON to UI Studio</h1><p>frontend/json_to_ui.html not found</p>")
+
+
+@app.get("/docs", include_in_schema=False)
+def custom_swagger_docs(request: Request):
+    """
+    Enhanced, High-End Custom Swagger UI:
+    - Sleek dark theme matching WeatherData design language.
+    - Top navigation bar linking to Dashboard, All Links, and JSON to UI Studio.
+    - Live keyword search/filter bar enabled by default.
+    - Auto-enabled 1-click 'Try it out' execution without multi-step clicking.
+    - Request latency counter in milliseconds.
+    - Reduced clutter with collapsed schemas.
+    """
+    base_res = get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="WEATHERDATA — Interactive API Console & Documentation",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_ui_parameters={
+            "filter": True,
+            "tryItOutEnabled": True,
+            "defaultModelsExpandDepth": -1,
+            "docExpansion": "list",
+            "displayRequestDuration": True,
+            "syntaxHighlight.theme": "monokai",
+        },
+    )
+    html = base_res.body.decode("utf-8")
+
+    # Inject modern Google fonts & custom dark theme stylesheet
+    custom_head = """
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/swagger.css">
+    """
+    html = html.replace("</head>", f"{custom_head}</head>")
+
+    # Inject top navigation bar
+    custom_nav = """
+    <nav class="custom-docs-navbar">
+      <a href="/" class="custom-docs-brand">
+        <div class="custom-docs-brand-icon">⚡</div>
+        <div class="custom-docs-brand-title">WEATHERDATA API EXPLORER</div>
+      </a>
+      <div class="custom-docs-nav-links">
+        <a href="/" class="custom-docs-nav-btn primary">🏠 Main Dashboard</a>
+        <a href="/links" class="custom-docs-nav-btn">🌐 All Links Portal</a>
+        <a href="/json-to-ui" class="custom-docs-nav-btn">✨ JSON to UI</a>
+      </div>
+    </nav>
+    """
+    html = html.replace("<body>", f'<body class="swagger-section">{custom_nav}')
+
+    return HTMLResponse(content=html)
 
 
 if __name__ == "__main__":
